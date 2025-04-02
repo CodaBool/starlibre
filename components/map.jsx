@@ -305,40 +305,75 @@ export default function Map({ width, height, data, name, mobile, params, locked 
       'fill-color': "red",
       'fill-opacity': 0.8
     }
-  };
+  }
 
   return (
     <>
-      <Source id="territory-source" type="geojson" data={data.territory}>
+      <Source type="geojson" data={JSON.parse(data)}>
         <Layer
-          id="territory-layer"
           type="fill"
           paint={{
             "fill-color": "#088",
             "fill-opacity": 0.4,
           }}
+          filter={['==', '$type', 'Polygon']}
         />
-      </Source>
-      <Source id="location-source" type="geojson" data={data.location}>
         <Layer
-          id="location-layer"
-          type="circle"
-          paint={{
-            "circle-radius": 2,
-            "circle-color": "#f00",
-          }}
-        />
-      </Source>
-      <Source id="guide-source" type="geojson" data={data.guide}>
-        <Layer
-          id="guide-layer"
-          type="line"
-          paint={{
+          type="symbol"
+          layout={{
+            "symbol-spacing": 250,
+            "icon-allow-overlap": false,
+            "icon-overlap": "cooperative",
+            "icon-size": 1,
+            "icon-text-fit": "none",
+
+            // basic no fallback
+            // 'icon-image': 'custom-marker',
+
+            // fallback image
+            "icon-image": ["coalesce", ["image", "myImage"], ["image", "fallbackImage"]],
+
+            // fallback image
+            // 'icon-image': [
+            //   'coalesce',
+            //   ['image', ['concat', ['get', 'icon'], '_15']],
+            //   ['image', 'marker_15']
+            // ],
+
+            // "text-field": ['get', 'name'],
+            // 'text-font': [
+            //   'Open Sans Semibold',
+            //   'Arial Unicode MS Bold'
+            // ],
+            // "text-size": 16,
+            // "text-max-width": 10,
+            // "text-line-height": 1.2,
+            // "text-line-height": 1.2,
+            // "text-optional": true,
 
           }}
+          style={{
+            "glyphs": "",
+
+          }}
+          paint={{
+            // "symbol-placement": "",
+            // "circle-radius": 2,
+            // "circle-color": "#f00",
+          }}
+          filter={['==', '$type', 'Point']}
+        />
+        <Layer
+          type="line"
+          paint={{
+            "line-color": "blue",
+            "line-width": 1,
+            "line-opacity": .9,
+            "line-dasharray": [10, 4],
+          }}
+          filter={['==', '$type', 'LineString']}
         />
       </Source>
-      {/* <Layer {...pointLayer} /> */}
       <Tooltip {...tooltip} mobile={mobile} />
     </>
   )

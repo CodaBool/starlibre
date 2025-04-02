@@ -129,7 +129,8 @@ export default function Cartographer({ name, data, stargazer, rawTopojson, mapId
     )
   }
 
-  console.log("controls", showControls, "editor", showEditor, "locked", locked)
+  // console.log("controls", showControls, "editor", showEditor, "locked", locked)
+  // console.log("data", data)
 
   return (
     <>

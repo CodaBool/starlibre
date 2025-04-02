@@ -30,11 +30,13 @@ export default async function mapLobby({ params }) {
   // if (map === "lancer_test" || map === "lancer") {
   //   return <Cartographer data={topojson} name={map} />
   // }
-  // const [data, type] = combineAndDownload("geojson", topojson, {})
+  const [data, type] = combineAndDownload("geojson", topojson, {})
 
   const territory = feature(topojson, topojson.objects.territory)
   const location = feature(topojson, topojson.objects.location)
   const guide = feature(topojson, topojson.objects.guide)
+  //
+  // console.log(data, territory)
 
   // TODO: the layer name here will be different for each map
   // const layers = Object.keys(topojson.objects)
@@ -42,7 +44,8 @@ export default async function mapLobby({ params }) {
   //   acc[layer] = feature(topojson, topojson.objects[layer]).features
   //   return acc
   // }, {})
-  return <Cartographer data={{ territory, location, guide }} name={map} />
+  return <Cartographer data={data} name={map} />
+  // return <Cartographer data={{ territory, location, guide }} name={map} />
 }
 
 export async function generateStaticParams() {

@@ -55,3 +55,10 @@ It does a few things:
 - add fill="white" when needed, for lucide it changes stroke="currentColor" to stroke="white"
 - combines all non-exclusive icons into a main folder
 - creates index json files which help create a search functionality
+
+
+# Sprite
+1. download latest spritezero release from [github](https://github.com/flother/spreet/releases)
+2. `./spreet_0.11.0 ../public/svg ../public/sprite --minify-index-file --sdf --recursive --ratio 32`
+  a. this can take up to 20 minutes
+2. `./spreet_0.11.0 ../public/svg ../public/sprite --minify-index-file --sdf --recursive --ratio 32`
