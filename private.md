@@ -64,8 +64,6 @@ npx mapshaper *.json \
   - https://github.com/CodaBool/starlaser/blob/976af63a5b5b86634afad0d7f2767656d007b46f/app/api/contribute/route.js#L63
   - https://github.com/CodaBool/starlaser/blob/976af63a5b5b86634afad0d7f2767656d007b46f/app/contribute/[map]/[id]/page.jsx#L78
 
-# Contribute work
-- brah
 
 # menu items needed
 - measure btn
