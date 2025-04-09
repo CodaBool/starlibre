@@ -4,6 +4,7 @@
   "scripts": {
     "start": "node --env-file=../.env upload.js",
     "svg": "node svg.js",
+    "starwars": "node starwars.cjs",
     "map": "node mapbox.js"
   },
   "dependencies": {

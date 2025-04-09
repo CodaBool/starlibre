@@ -8,8 +8,8 @@
       "url": "https://tiles.basemaps.cartocdn.com/vector/carto.streets/v1/tiles.json"
     }
   },
-  "sprite": "https://raw.githubusercontent.com/CodaBool/starlaser/refs/heads/main/public/svg/all",
-  "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
+  "sprite": "https://github.com/CodaBool/starlibre/blob/main/public/svg/fallout@10.png?raw=true",
+  "glyphs": "https://raw.githubusercontent.com/CodaBool/starlibre/refs/heads/main/public/svg/fallout%4010.json",
   "layers": [
     {
       "id": "background",

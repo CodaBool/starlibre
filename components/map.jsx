@@ -327,11 +327,39 @@ export default function Map({ width, height, data, name, mobile, params, locked 
             "icon-size": 1,
             "icon-text-fit": "none",
 
+            "icon-image": [
+              "coalesce",
+              ["image", ["get", "type"]],
+              ["image", ["get", ["literal", {
+                jovian: "gas",
+                gate: "gate_3",
+                station: "station",
+                star: "star",
+                terrestrial: "world",
+                moon: "moon",
+                cluster: "ursa_major",
+                sector: "sector",
+                vault: "vault",
+                base: "military",
+                settlement: "settlement",
+                town: "settlements",
+                city: "city",
+                building: "big_house",
+                cave: "cave",
+                compound: "ruins",
+                region: "mountain",
+                falloutFaction: "pipboy",
+                hyperspace: "hyperspace"
+              }]]]
+            ],
+
+            // "icon-image": ["concat", ["get", "type"], "_icon"],
+
             // basic no fallback
             // 'icon-image': 'custom-marker',
 
             // fallback image
-            "icon-image": ["coalesce", ["image", "myImage"], ["image", "fallbackImage"]],
+            // "icon-image": ["coalesce", ["image", "myImage"], ["image", "fallbackImage"]],
 
             // fallback image
             // 'icon-image': [
