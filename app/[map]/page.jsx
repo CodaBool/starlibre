@@ -19,7 +19,7 @@ export default async function mapLobby({ params }) {
   // path.resolve(`app/[map]/topojson/lancer.json`)
   path.resolve(`app/[map]/topojson/fallout.json`)
   path.resolve(`app/[map]/topojson/lancer.json`)
-  path.resolve(`app/[map]/topojson/lancer_test.json`)
+  // path.resolve(`app/[map]/topojson/lancer_test.json`)
   path.resolve(`app/[map]/topojson/lancer_starwall.json`)
   path.resolve(`app/[map]/topojson/starwars.json`)
   // const content = await fs.promises.readFile(path.resolve(`app/[map]/topojson/${map}.json`), 'utf8')
@@ -32,9 +32,9 @@ export default async function mapLobby({ params }) {
   // }
   const [data, type] = combineAndDownload("geojson", topojson, {})
 
-  const territory = feature(topojson, topojson.objects.territory)
-  const location = feature(topojson, topojson.objects.location)
-  const guide = feature(topojson, topojson.objects.guide)
+  // const territory = feature(topojson, topojson.objects.territory)
+  // const location = feature(topojson, topojson.objects.location)
+  // const guide = feature(topojson, topojson.objects.guide)
   //
   // console.log(data, territory)
 

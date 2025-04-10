@@ -3,10 +3,10 @@ import maplibregl, {
   MapMouseEvent,
   LngLat,
 } from 'maplibre-gl'
-import { useMap, Layer, Source } from 'react-map-gl/maplibre'
+import { useMap, Layer, Source, Popup } from 'react-map-gl/maplibre'
 // import { geoPath, geoMercator, geoTransform } from 'd3-geo'
 import { useEffect, useRef, useState } from 'react'
-import { color, important, positionTooltip, accent, ignoreList, getConsts, hashString } from "@/lib/utils.js"
+import { color, important, positionTooltip, accent, ignoreList, getConsts, hashString, getColorExpression } from "@/lib/utils.js"
 import { ZoomIn, ZoomOut } from "lucide-react"
 import Tooltip from './tooltip'
 // import AutoResize from './autoresize'
@@ -194,36 +194,6 @@ export default function Map({ width, height, data, name, mobile, params, locked 
   useEffect(() => {
     if (!map) return
 
-    // console.log("map", data)
-    // map.on('load', () => {
-    //   map.getMap().addSource('map', {
-    //     type: 'geojson',
-    //     data
-    //   })
-
-    //   map.getMap().addLayer({
-    //     'id': 'territory',
-    //     'type': 'fill',
-    //     'source': 'map',
-    //     'paint': {
-    //       'fill-color': '#888888',
-    //       'fill-opacity': 0.4
-    //     },
-    //     'filter': ['==', '$type', 'Polygon']
-    //   });
-
-    //   map.getMap().addLayer({
-    //     'id': 'location',
-    //     'type': 'circle',
-    //     'source': 'map',
-    //     'paint': {
-    //       'circle-radius': 6,
-    //       'circle-color': '#B42222'
-    //     },
-    //     'filter': ['==', '$type', 'Point']
-    //   });
-    // });
-
     function render() {
       // prevents measure dot from being moved on pan for both mobile and desktop
       if (mode.has("measureStart")) {
@@ -240,15 +210,98 @@ export default function Map({ width, height, data, name, mobile, params, locked 
       }
     }
 
+
+    const popup = new maplibregl.Popup({
+      closeButton: false,
+      closeOnClick: false
+    });
+    let currentFeatureCoordinates, hoveredStateId
+
+    const mouseMove = (e) => {
+
+      if (e.features.length > 0) {
+        console.log("id", e.features[0].id, e.features[0])
+
+        const feature = e.features[0];
+        const featureName = feature.properties.name;
+        const featureCoordinates = feature.geometry.coordinates.toString()
+
+        console.log("map", map, map.getMap(), map.getCanvas())
+
+        // TODO: probably need a autoincrement an id for all features
+
+        // map.getMap().setPaintProperty('location', 'fill-color', [
+        //   'case',
+        //   ['all', ['==', ['get', 'name'], featureName], ['==', ['to-string', ['get', 'coordinates']], featureCoordinates]],
+        //   '#FF0000', // Highlight color
+        //   getColorExpression(name, "fill", "Polygon") // Default color
+        // ]);
+
+        // map.setFeatureState(
+        //                     {source: 'states', id: hoveredStateId},
+        //                     {hover: true}
+        //                 );
+
+        // if (hoveredStateId) {
+        //     map.setFeatureState(
+        //         {id: hoveredStateId},
+        //         {hover: false}
+        //     );
+        // }
+        // hoveredStateId = e.features[0].id;
+        // map.setFeatureState(
+        //     {id: hoveredStateId},
+        //     {hover: true}
+        // );
+      }
+
+
+      const featureCoordinates = e.features[0].geometry.coordinates.toString();
+      if (currentFeatureCoordinates !== featureCoordinates) {
+        currentFeatureCoordinates = featureCoordinates;
+
+        // Change the cursor style as a UI indicator.
+        map.getCanvas().style.cursor = 'pointer';
+
+        let coordinates = e.features[0].geometry.coordinates.slice();
+        const description = e.features[0].properties.description || e.features[0].properties.name
+
+        // Ensure that if the map is zoomed out such that multiple
+        // copies of the feature are visible, the popup appears
+        // over the copy being pointed to.
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
+        if (e.features[0].geometry.type === "LineString") {
+          if (!e.lngLat) return
+          coordinates = [e.lngLat.lng, e.lngLat.lat]
+        }
+        popup.setLngLat(coordinates).setHTML(description).addTo(map.getMap())
+      }
+    }
+    const mouseLeave = (e) => {
+      currentFeatureCoordinates = undefined;
+      map.getCanvas().style.cursor = '';
+      popup.remove()
+    }
+
     map.on("viewreset", render)
     map.on("move", render)
     map.on("moveend", render)
+    map.on('mousemove', 'location', mouseMove)
+    map.on('mouseleave', 'location', mouseLeave)
+    map.on('mousemove', 'guide', mouseMove)
+    map.on('mouseleave', 'guide', mouseLeave)
     render()
 
     return () => {
       map.off("viewreset", render)
       map.off("move", render)
       map.off("moveend", render)
+      map.off('mousemove', 'location', mouseMove)
+      map.off('mouseleave', 'location', mouseLeave)
+      map.off('mousemove', 'guide', mouseMove)
+      map.off('mouseleave', 'guide', mouseLeave)
     }
   }, [map])
 
@@ -259,53 +312,12 @@ export default function Map({ width, height, data, name, mobile, params, locked 
     </>
   )
 
-  const territoryLayer = {
-    id: 'territory',
-    type: 'fill',
-    source: 'map',
-    // filter: ['==', '$type', 'Polygon'],
-    paint: {
-      'fill-color': '#4E3FC8'
-    }
-  }
-  const pointLayer = {
-    id: 'location',
-    type: 'circle',
-    source: 'map',
-    // 'source-layer': 'map',
-    filter: ['==', '$type', 'Point'],
-    paint: {
-      'circle-radius': 50,
-      'circle-color': '#B42222'
-    }
-  }
-
-  const riskLevelsFillLayer = {
-    id: 'risk-levels-fill',
-    type: 'fill',
-    paint: {
-      'fill-color': ['case',
-        ['==', ['get', 'level'], 5], '#de1b1b',
-        ['==', ['get', 'level'], 4], '#de5f1b',
-        ['==', ['get', 'level'], 3], '#de8a1b',
-        ['==', ['get', 'level'], 2], '#dec71b',
-        ['==', ['get', 'level'], 1], '#ded41b',
-        ['==', ['get', 'level'], 0], '#fafafa',
-        '#fafafa'],
-      'fill-opacity': ['case',
-        ['has', 'level'], 0.8, 0
-      ]
-    }
-  }
-
-  const riskLevelsFillLayer2 = {
-    id: 'data',
-    type: 'fill',
-    paint: {
-      'fill-color': "red",
-      'fill-opacity': 0.8
-    }
-  }
+  /*
+  TODO:
+  - add color to symbols
+  - better popup, should have type
+  - color location different on hover
+  */
 
   return (
     <>
@@ -313,107 +325,57 @@ export default function Map({ width, height, data, name, mobile, params, locked 
         <Layer
           type="fill"
           paint={{
-            "fill-color": "#088",
-            "fill-opacity": 0.4,
+            "fill-color": getColorExpression(name, "fill", "Polygon"),
+            'fill-outline-color': getColorExpression(name, "stroke", "Polygon"),
           }}
           filter={['==', '$type', 'Polygon']}
         />
         <Layer
           type="symbol"
+          id="location"
           layout={{
-            "symbol-spacing": 250,
-            "icon-allow-overlap": false,
+            // "symbol-spacing": 250, // default 250 (in px)
+            // "icon-allow-overlap": true, // default false
+            "icon-overlap": "always",
+            // "icon-optional": true, // default false
             "icon-overlap": "cooperative",
-            "icon-size": 1,
-            "icon-text-fit": "none",
-
-            "icon-image": [
-              "coalesce",
-              ["image", ["get", "type"]],
-              ["image", ["get", ["literal", {
-                jovian: "gas",
-                gate: "gate_3",
-                station: "station",
-                star: "star",
-                terrestrial: "world",
-                moon: "moon",
-                cluster: "ursa_major",
-                sector: "sector",
-                vault: "vault",
-                base: "military",
-                settlement: "settlement",
-                town: "settlements",
-                city: "city",
-                building: "big_house",
-                cave: "cave",
-                compound: "ruins",
-                region: "mountain",
-                falloutFaction: "pipboy",
-                hyperspace: "hyperspace"
-              }]]]
-            ],
-
-            // "icon-image": ["concat", ["get", "type"], "_icon"],
-
-            // basic no fallback
-            // 'icon-image': 'custom-marker',
-
-            // fallback image
+            "icon-size": .6,
+            // "text-anchor": "top",
+            "text-offset": [0, 1.3],
+            "icon-padding": 0, // default 2
+            "icon-image": ["get", "type"],
+            // fallback image example 1
             // "icon-image": ["coalesce", ["image", "myImage"], ["image", "fallbackImage"]],
 
-            // fallback image
+            // fallback image example 2
             // 'icon-image': [
             //   'coalesce',
             //   ['image', ['concat', ['get', 'icon'], '_15']],
             //   ['image', 'marker_15']
             // ],
-
-            // "text-field": ['get', 'name'],
-            // 'text-font': [
-            //   'Open Sans Semibold',
-            //   'Arial Unicode MS Bold'
-            // ],
-            // "text-size": 16,
-            // "text-max-width": 10,
-            // "text-line-height": 1.2,
-            // "text-line-height": 1.2,
-            // "text-optional": true,
-
-          }}
-          style={{
-            "glyphs": "",
-
+            "text-field": ['get', 'name'],
+            "text-font": ["Noto Sans Bold"],
+            "text-size": 10,
+            "text-max-width": 10,
+            "text-line-height": 1.2,
+            "text-optional": true,
           }}
           paint={{
-            // "symbol-placement": "",
-            // "circle-radius": 2,
-            // "circle-color": "#f00",
+            "text-color": "#ffffff",
           }}
           filter={['==', '$type', 'Point']}
         />
         <Layer
           type="line"
+          id="guide"
           paint={{
-            "line-color": "blue",
-            "line-width": 1,
-            "line-opacity": .9,
+            "line-color": getColorExpression(name, "stroke", "LineString"),
+            "line-width": 2,
             "line-dasharray": [10, 4],
           }}
           filter={['==', '$type', 'LineString']}
         />
       </Source>
-      <Tooltip {...tooltip} mobile={mobile} />
-    </>
-  )
-
-  return (
-    <>
-      <Source type="geojson" data={data}>
-        {/* <Layer {...riskLevelsFillLayer2} /> */}
-        <Layer {...pointLayer} />
-        <Layer {...territoryLayer} />
-      </Source>
-      {/* <Layer {...pointLayer} /> */}
       <Tooltip {...tooltip} mobile={mobile} />
     </>
   )
