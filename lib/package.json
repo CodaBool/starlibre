@@ -5,7 +5,7 @@
     "start": "node --env-file=../.env upload.js",
     "svg": "node svg.js",
     "starwars": "node starwars.cjs",
-    "map": "node mapbox.js"
+    "sprite": "node sprite.js"
   },
   "dependencies": {
     "@elastic/spritezero": "^6.2.1",

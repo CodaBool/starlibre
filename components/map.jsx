@@ -218,43 +218,19 @@ export default function Map({ width, height, data, name, mobile, params, locked 
     let currentFeatureCoordinates, hoveredStateId
 
     const mouseMove = (e) => {
-
       if (e.features.length > 0) {
-        // console.log("id", e.features[0].id, e.features[0])
-
-        const feature = e.features[0];
-        const featureName = feature.properties.name;
-        const featureCoordinates = feature.geometry.coordinates.toString()
-
-        // console.log("map", map, map.getMap(), map.getCanvas())
-
-        // TODO: probably need a autoincrement an id for all features
-
-        // map.getMap().setPaintProperty('location', 'fill-color', [
-        //   'case',
-        //   ['all', ['==', ['get', 'name'], featureName], ['==', ['to-string', ['get', 'coordinates']], featureCoordinates]],
-        //   '#FF0000', // Highlight color
-        //   getColorExpression(name, "fill", "Polygon") // Default color
-        // ]);
-
-        // map.setFeatureState(
-        //                     {source: 'states', id: hoveredStateId},
-        //                     {hover: true}
-        //                 );
-
-        // if (hoveredStateId) {
-        //     map.setFeatureState(
-        //         {id: hoveredStateId},
-        //         {hover: false}
-        //     );
-        // }
-        // hoveredStateId = e.features[0].id;
-        // map.setFeatureState(
-        //     {id: hoveredStateId},
-        //     {hover: true}
-        // );
+        if (hoveredStateId) {
+          map.setFeatureState(
+            { source: 'source', id: hoveredStateId },
+            { hover: false }
+          );
+        }
+        hoveredStateId = e.features[0].id;
+        map.setFeatureState(
+          { source: 'source', id: hoveredStateId },
+          { hover: true }
+        );
       }
-
 
       const featureCoordinates = e.features[0].geometry.coordinates.toString();
       if (currentFeatureCoordinates !== featureCoordinates) {
@@ -280,6 +256,14 @@ export default function Map({ width, height, data, name, mobile, params, locked 
       }
     }
     const mouseLeave = (e) => {
+      if (hoveredStateId) {
+        map.setFeatureState(
+          { source: 'source', id: hoveredStateId },
+          { hover: false }
+        );
+      }
+      hoveredStateId = null;
+
       currentFeatureCoordinates = undefined;
       map.getCanvas().style.cursor = '';
       popup.remove()
@@ -321,7 +305,7 @@ export default function Map({ width, height, data, name, mobile, params, locked 
 
   return (
     <>
-      <Source type="geojson" data={JSON.parse(data)}>
+      <Source id="source" type="geojson" data={JSON.parse(data)} generateId>
         <Layer
           type="fill"
           paint={{
@@ -346,7 +330,6 @@ export default function Map({ width, height, data, name, mobile, params, locked 
             "icon-image": ["get", "type"],
             // fallback image example 1
             // "icon-image": ["coalesce", ["image", "myImage"], ["image", "fallbackImage"]],
-
             // fallback image example 2
             // 'icon-image': [
             //   'coalesce',
@@ -362,6 +345,8 @@ export default function Map({ width, height, data, name, mobile, params, locked 
           }}
           paint={{
             "text-color": "#ffffff",
+            "icon-color": "#ff0000",
+            "icon-halo-color": "#ff0000",
           }}
           filter={['==', '$type', 'Point']}
         />
