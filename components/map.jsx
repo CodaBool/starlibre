@@ -88,7 +88,7 @@ export default function Map({ width, height, data, name, mobile, params, locked 
   const [tooltip, setTooltip] = useState()
   const [drawerOpen, setDrawerOpen] = useState()
   const [drawerContent, setDrawerContent] = useState()
-  const { CENTER, SCALE, CLICK_ZOOM, NO_PAN, LAYER_PRIO } = getConsts(name)
+  const { CENTER, SCALE, CLICK_ZOOM, NO_PAN, LAYER_PRIO, LAYOUT_OVERIDE } = getConsts(name)
 
 
   async function pan(d, locations, fit) {
@@ -252,6 +252,9 @@ export default function Map({ width, height, data, name, mobile, params, locked 
           if (!e.lngLat) return
           coordinates = [e.lngLat.lng, e.lngLat.lat]
         }
+        if (!coordinates) {
+          console.error("failed to get coordinates", coordinates, e)
+        }
         popup.setLngLat(coordinates).setHTML(description).addTo(map.getMap())
       }
     }
@@ -342,11 +345,16 @@ export default function Map({ width, height, data, name, mobile, params, locked 
             "text-max-width": 10,
             "text-line-height": 1.2,
             "text-optional": true,
+            ...LAYOUT_OVERIDE || {},
           }}
           paint={{
             "text-color": "#ffffff",
-            "icon-color": "#ff0000",
-            "icon-halo-color": "#ff0000",
+            "icon-color": [
+              'case',
+              ['boolean', ['feature-state', 'hover'], false],
+              accent(name, 1),
+              getColorExpression(name, "fill", "Point")
+            ],
           }}
           filter={['==', '$type', 'Point']}
         />
