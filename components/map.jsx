@@ -220,13 +220,13 @@ export default function Map({ width, height, data, name, mobile, params, locked 
     const mouseMove = (e) => {
 
       if (e.features.length > 0) {
-        console.log("id", e.features[0].id, e.features[0])
+        // console.log("id", e.features[0].id, e.features[0])
 
         const feature = e.features[0];
         const featureName = feature.properties.name;
         const featureCoordinates = feature.geometry.coordinates.toString()
 
-        console.log("map", map, map.getMap(), map.getCanvas())
+        // console.log("map", map, map.getMap(), map.getCanvas())
 
         // TODO: probably need a autoincrement an id for all features
 
