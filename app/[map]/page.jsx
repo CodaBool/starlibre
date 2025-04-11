@@ -44,7 +44,15 @@ export default async function mapLobby({ params }) {
   //   acc[layer] = feature(topojson, topojson.objects[layer]).features
   //   return acc
   // }, {})
-  return <Cartographer data={data} name={map} />
+  const ensureFeatureIds = (geojson) => {
+    let idCounter = 0
+    geojson.features.forEach(feature => {
+      feature.id = idCounter++;
+    })
+    return geojson
+  }
+
+  return <Cartographer data={ensureFeatureIds(JSON.parse(data))} name={map} />
   // return <Cartographer data={{ territory, location, guide }} name={map} />
 }
 

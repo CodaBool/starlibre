@@ -130,7 +130,6 @@ export default function Cartographer({ name, data, stargazer, rawTopojson, mapId
   }
 
   // console.log("controls", showControls, "editor", showEditor, "locked", locked)
-  // console.log("data", data)
 
   return (
     <>
@@ -149,6 +148,7 @@ export default function Cartographer({ name, data, stargazer, rawTopojson, mapId
       >
         <MapComponent width={size.width} height={size.height} name={name} data={data} mobile={mobile} SCALE={SCALE} CENTER={CENTER} params={params} stargazer={stargazer} locked={locked} />
       </Map>
+      <div style={{ width: size.width, height: size.height, background: `radial-gradient(${BG})`, zIndex: -1, top: 0, position: "absolute" }}></div>
     </>
   )
 }

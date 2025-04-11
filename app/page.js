@@ -12,7 +12,7 @@ export default function page() {
       <h1 className="text-5xl my-2 text-center">Sci-Fi Maps</h1 >
       <div className="container mx-auto flex flex-wrap justify-center">
         <Link href="/lancer">
-          <Card className="max-w-[150px] cursor-pointer lg:max-w-[441px] rounded-xl m-1">
+          <Card className="max-w-[150px] cursor-pointer lg:max-w-[269px] rounded-xl m-1">
             <CardHeader className="p-2 pb-1">
               <CardTitle className="text-center">LANCER</CardTitle >
               <CardDescription className="text-center">CodaBool</CardDescription>
@@ -27,7 +27,7 @@ export default function page() {
           </Card >
         </Link >
         <Link href="/fallout">
-          <Card className="max-w-[150px] cursor-pointer lg:max-w-[441px] rounded-xl m-1">
+          <Card className="max-w-[150px] cursor-pointer lg:max-w-[269px] rounded-xl m-1">
             <CardHeader className="p-2 pb-1">
               <CardTitle className="text-center">FALLOUT</CardTitle >
               <CardDescription className="text-center">CodaBool</CardDescription>
@@ -42,7 +42,7 @@ export default function page() {
           </Card >
         </Link>
         <Link href="/starwars">
-          <Card className="max-w-[150px] cursor-pointer lg:max-w-[441px] rounded-xl m-1">
+          <Card className="max-w-[150px] cursor-pointer lg:max-w-[269px] rounded-xl m-1">
             <CardHeader className="p-2 pb-1">
               <CardTitle className="text-center">STARWARS</CardTitle >
               <CardDescription className="text-center">CodaBool</CardDescription>

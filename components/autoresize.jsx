@@ -3,10 +3,10 @@ import { useEffect, useState } from "react"
 
 let resizeTimeout
 
-export default function AutoResize({ svg, zoom, projection, mobile, width, height, setTooltip, positionTooltip, center }) {
+export default function AutoResize({ svg, zoom, mobile, width, height, setTooltip, positionTooltip, center }) {
 
   useEffect(() => {
-    if (!svg || !zoom || !projection) return
+    if (!svg || !zoom) return
 
     // resize crosshair
     selectAll('.crosshair-x')

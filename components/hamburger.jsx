@@ -18,21 +18,27 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Heart, Github, UserRound, Copyright, Sparkles, Telescope, SquareArrowOutUpRight, MoonStar, Sparkle, BookOpen, Bug, Pencil, Plus, MapPin, RectangleHorizontal, Map, ArrowRightFromLine, Hexagon, ListCollapse, User, LogOut, Ruler, CodeXml, Menu, Crosshair, HeartHandshake, Eye } from "lucide-react"
-import { select } from 'd3'
 import { useEffect, useState } from "react"
+import { getConsts } from "@/lib/utils"
 
-export default function Hamburger({ mode, name, c }) {
+export default function Hamburger({ mode, name, c, map }) {
   const [check, setCheck] = useState()
   const [id, setId] = useState()
   const [editId, setEditId] = useState()
+  const { UNIT } = getConsts(name)
 
   function toggle(newMode, skipnull) {
     if (mode.has(newMode)) {
       mode.delete(newMode)
       if (skipnull) setCheck(null)
-      select('.textbox').style("visibility", "hidden")
-      select('.point-click').style("visibility", "hidden")
-      select('.line-click').style("visibility", "hidden")
+      document.querySelector('.textbox').style.visibility = "hidden"
+      document.querySelectorAll('.crosshair').forEach(el => el.style.visibility = "hidden")
+      if (map.getSource('toolbox')) {
+        map.getSource('toolbox').setData({
+          "type": "FeatureCollection",
+          "features": []
+        })
+      }
     } else {
       if (mode.has("measure")) {
         toggle("measure", true)
@@ -40,8 +46,19 @@ export default function Hamburger({ mode, name, c }) {
         toggle("crosshair", true)
       }
       mode.add(newMode)
+      if (newMode === "crosshair") {
+        const { lng, lat } = map.getCenter()
+        console.log("turned on crosshair", lng)
+        document.querySelectorAll('.crosshair').forEach(el => el.style.visibility = "visible")
+        const text = document.querySelector('.textbox')
+        if (UNIT === "ly") {
+          text.textContent = `X: ${lng.toFixed(1)} | Y: ${lat.toFixed(1)}`;
+        } else {
+          text.textContent = `Lat: ${lat.toFixed(3)}° | Lng: ${lng.toFixed(3)}°`;
+        }
+        text.style.visibility = 'visible'
+      }
       setCheck(newMode)
-      select(".line-click").raise()
     }
   }
 

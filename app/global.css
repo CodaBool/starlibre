@@ -195,5 +195,30 @@ body {
 
 /* full maplibre switch */
 .maplibregl-popup {
-  color: black;
+  color: white;
+  overflow: hidden;
+}
+
+.maplibregl-popup-tip {
+  pointer-events: none !important;
+  display: none !important;
+}
+.maplibregl-popup-content {
+  pointer-events: none !important;
+  background: black !important;
+  border-radius: 10px !important;
+  border: 1px dashed gray !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.3, 0, 1, 1);
 }

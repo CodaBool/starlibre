@@ -2,39 +2,23 @@
 import maplibregl, {
   MapMouseEvent,
   LngLat,
+  LngLatBounds,
 } from 'maplibre-gl'
 import { useMap, Layer, Source, Popup } from 'react-map-gl/maplibre'
 // import { geoPath, geoMercator, geoTransform } from 'd3-geo'
 import { useEffect, useRef, useState } from 'react'
-import { color, important, positionTooltip, accent, ignoreList, getConsts, hashString, getColorExpression } from "@/lib/utils.js"
+import { color, important, positionTooltip, accent, getConsts, hashString, getColorExpression, createPopupHTML } from "@/lib/utils.js"
 import { ZoomIn, ZoomOut } from "lucide-react"
-import Tooltip from './tooltip'
-// import AutoResize from './autoresize'
+import SearchBar from './searchbar'
 import * as SVG from './svg.js'
 import turfCentroid from '@turf/centroid'
 import { domToPng } from 'modern-screenshot'
 import * as turf from '@turf/turf'
+import Hamburger from './hamburger'
+import Toolbox from './toolbox'
 // import { Calibrate, Link } from './foundry'
 
-let projection, svg, zoom, path, g, tooling, clickCir, guideLabel, mode = new Set([])
-
-// Function to generate circle data from center (longitude, latitude) and radius
-function generateCircle(center, radius) {
-  const centerPoint = turf.point(center)
-  const circle = turf.circle(centerPoint, radius, { units: 'kilometers' })
-  return {
-    type: "FeatureCollection",
-    features: [
-      {
-        type: "Feature",
-        geometry: {
-          type: "Polygon",
-          coordinates: circle.geometry.coordinates
-        }
-      }
-    ]
-  }
-}
+let mode = new Set([])
 
 export async function getIcon(d, fillRGBA) {
   const icon = d.properties.icon || SVG[d.properties.type]
@@ -82,19 +66,17 @@ export async function getIcon(d, fillRGBA) {
   return null;
 }
 
-
 export default function Map({ width, height, data, name, mobile, params, locked }) {
   const { map } = useMap()
-  const [tooltip, setTooltip] = useState()
   const [drawerOpen, setDrawerOpen] = useState()
   const [drawerContent, setDrawerContent] = useState()
-  const { CENTER, SCALE, CLICK_ZOOM, NO_PAN, LAYER_PRIO, LAYOUT_OVERIDE } = getConsts(name)
+  const { CENTER, SCALE, CLICK_ZOOM, NO_PAN, LAYER_PRIO, LAYOUT_OVERIDE, IGNORE_POLY } = getConsts(name)
 
 
   async function pan(d, locations, fit) {
     if (locked && !fit) return
     mode.add("zooming")
-    let fly = true, lat, lng, coordinates = d.geometry.coordinates
+    let fly = true, lat, lng, bounds, coordinates = d.geometry.coordinates
     let zoomedOut = map.getZoom() < 6
 
     // force a zoom if panning to location by search
@@ -111,11 +93,6 @@ export default function Map({ width, height, data, name, mobile, params, locked 
 
     } else {
 
-      // remove sheet circle
-      if (document.querySelector(".click-circle")) {
-        document.querySelector(".click-circle").remove()
-      }
-
       // find center of territory or guide
       const centroid = turf.centroid(d)
       coordinates = centroid.geometry.coordinates
@@ -123,17 +100,9 @@ export default function Map({ width, height, data, name, mobile, params, locked 
       lat = coordinates[1]
 
       // zoom view to fit territory or guide when searched
+
       if (fit) {
-        const bounds = path.bounds(d);
-        const [[x0, y0], [x1, y1]] = bounds;
-        const dx = x1 - x0;
-        const dy = y1 - y0;
-        const padding = 20;
-        const newZoom = Math.min(
-          map.getZoom() + Math.log2(Math.min(map.getContainer().clientWidth / (dx + padding), map.getContainer().clientHeight / (dy + padding))),
-          map.getMaxZoom()
-        )
-        zoom = newZoom
+        bounds = turf.bbox(d)
       }
       if (!zoomedOut) fly = false
     }
@@ -149,7 +118,17 @@ export default function Map({ width, height, data, name, mobile, params, locked 
     }
 
     if (fly) {
-      map.flyTo({ center: [lng, lat], duration: 800, zoom })
+      if (bounds) {
+        map.fitBounds([
+          [bounds[0], bounds[1]], // bottom-left corner
+          [bounds[2], bounds[3]]  // top-right corner
+        ], {
+          duration: 800,
+          padding: { top: 50, bottom: 50, left: 50, right: 50 },
+        });
+      } else {
+        map.flyTo({ center: [lng, lat], duration: 800, zoom })
+      }
       setTimeout(() => mode.delete("zooming"), 801)
     }
 
@@ -157,67 +136,44 @@ export default function Map({ width, height, data, name, mobile, params, locked 
     setDrawerOpen(true)
   }
 
-  function hover(e, { properties, geometry }) {
-    if ((mode.has("crosshair") && mobile) || locked) return
-    const guide = geometry.type === "LineString"
-    const location = geometry.type === "Point"
-    const territory = geometry.type?.includes("Poly")
-    if (e.type === "mouseover") {
-      setTooltip(properties)
-      positionTooltip(e)
-      // if (ignoreList[name].includes(properties.type)) return
-      // // if (territory) d3.select(e.currentTarget).attr('fill', accent(name, 0.01))
-      // if (location) d3.select(e.currentTarget).attr('fill', accent(name, 1))
-      // if (guide || territory) d3.select(e.currentTarget).attr('stroke', accent(name, 0.2))
-      // if (location || guide) d3.select(e.currentTarget).style('cursor', 'crosshair')
-    } else if (e.type === "mouseout") {
-      // if (!guide) d3.select(e.currentTarget).attr('fill', color(name, properties, "fill", geometry.type))
-      // if (!location) d3.select(e.currentTarget).attr('stroke', color(name, properties, "stroke", geometry.type))
-      setTooltip()
-      document.querySelector(".map-tooltip").style.visibility = "hidden"
-    }
-  }
-
-  function getTextCoord(d) {
-    if (d.properties.type !== "line") {
-      const point = map.project(new maplibregl.LngLat(...turf.centroid(d).geometry.coordinates))
-      return [point.x, point.y]
-    }
-    const i = data.territory.filter(d => d.properties.type === "line").findIndex(line => line.properties.name === d.properties.name)
-    // Compute the geographic centroid of the feature
-    const pointy = turf.point([-77, 42]);
-    const offsetCoord = turf.destination(pointy, ((i + 1) * 550), 45)
-    const point = map.project(new maplibregl.LngLat(...offsetCoord.geometry.coordinates))
-    return [point.x, point.y]
-  }
-
   useEffect(() => {
     if (!map) return
 
     function render() {
-      // prevents measure dot from being moved on pan for both mobile and desktop
       if (mode.has("measureStart")) {
         mode.delete("measureStart")
       } else if (mode.has("crosshairZoom")) {
         mode.delete("crosshairZoom")
-      } else if (mode.has("crosshair")) {
-        document.querySelector(".map-tooltip").style.visibility = "hidden"
-      }
-      if (mode.has("measure")) {
-        if (document.querySelector(".line-click")) {
-          document.querySelector(".line-click").style.visibility = 'hidden'
-        }
       }
     }
 
-
     const popup = new maplibregl.Popup({
       closeButton: false,
-      closeOnClick: false
+      offset: [0, 20],
+      closeOnClick: false,
+      maxWidth: "340px",
+      anchor: "top",
+      className: "fade-in"
     });
     let currentFeatureCoordinates, hoveredStateId
 
     const mouseMove = (e) => {
+
+      // coordinates
+      // if (e.features.length > 0) {
+      //   const coordinates = e.features[0].geometry.coordinates.slice()
+      //   const popupContent = `Coordinates: ${coordinates.join(", ")}`
+      //   new maplibregl.Popup().setLngLat(e.lngLat).setHTML(popupContent).addTo(map)
+      // }
+      // if (mode.has("crosshair")) {
+      //   const { lng, lat } = e.lngLat
+      //   crosshairX.style.left = `${e.point.x}px`
+      //   crosshairY.style.top = `${e.point.y}px`
+      //   crosshairX.style.visibility = 'visible'
+      //   crosshairY.style.visibility = 'visible'
+      // }
+
+      // hover
       if (e.features.length > 0) {
         if (hoveredStateId) {
           map.setFeatureState(
@@ -232,6 +188,7 @@ export default function Map({ width, height, data, name, mobile, params, locked 
         );
       }
 
+      // popup
       const featureCoordinates = e.features[0].geometry.coordinates.toString();
       if (currentFeatureCoordinates !== featureCoordinates) {
         currentFeatureCoordinates = featureCoordinates;
@@ -240,7 +197,7 @@ export default function Map({ width, height, data, name, mobile, params, locked 
         map.getCanvas().style.cursor = 'pointer';
 
         let coordinates = e.features[0].geometry.coordinates.slice();
-        const description = e.features[0].properties.description || e.features[0].properties.name
+        const popupContent = createPopupHTML(e)
 
         // Ensure that if the map is zoomed out such that multiple
         // copies of the feature are visible, the popup appears
@@ -255,7 +212,7 @@ export default function Map({ width, height, data, name, mobile, params, locked 
         if (!coordinates) {
           console.error("failed to get coordinates", coordinates, e)
         }
-        popup.setLngLat(coordinates).setHTML(description).addTo(map.getMap())
+        popup.setLngLat(coordinates).setHTML(popupContent).addTo(map.getMap())
       }
     }
     const mouseLeave = (e) => {
@@ -268,8 +225,20 @@ export default function Map({ width, height, data, name, mobile, params, locked 
       hoveredStateId = null;
 
       currentFeatureCoordinates = undefined;
-      map.getCanvas().style.cursor = '';
+      map.getCanvas().style.cursor = ''
+      const popupElement = document.querySelector('.maplibregl-popup');
+      if (popupElement) {
+        popupElement.classList.remove('fade-in');
+        // popupElement.classList.add('fade-out')
+      }
       popup.remove()
+    }
+
+    const territoryClick = (e) => {
+      if (IGNORE_POLY.includes(e.features[0].properties.type)) return
+      const coordinates = e.lngLat;
+      const popupContent = createPopupHTML(e)
+      popup.setLngLat(coordinates).setHTML(popupContent).addTo(map.getMap());
     }
 
     map.on("viewreset", render)
@@ -279,8 +248,8 @@ export default function Map({ width, height, data, name, mobile, params, locked 
     map.on('mouseleave', 'location', mouseLeave)
     map.on('mousemove', 'guide', mouseMove)
     map.on('mouseleave', 'guide', mouseLeave)
+    map.on('click', 'territory', territoryClick)
     render()
-
     return () => {
       map.off("viewreset", render)
       map.off("move", render)
@@ -289,30 +258,31 @@ export default function Map({ width, height, data, name, mobile, params, locked 
       map.off('mouseleave', 'location', mouseLeave)
       map.off('mousemove', 'guide', mouseMove)
       map.off('mouseleave', 'guide', mouseLeave)
+      map.off('click', 'territory', territoryClick)
     }
   }, [map])
 
-  if (locked) return (<Tooltip {...tooltip} mobile={mobile} />)
-  if (params.get("calibrate")) return (
-    <>
-      <Tooltip {...tooltip} mobile={mobile} />
-    </>
-  )
+  if (locked || params.get("calibrate")) return null
 
   /*
   TODO:
-  - add color to symbols
-  - better popup, should have type
-  - color location different on hover
+  - fix other pages
+  - toolbox text is above search
   */
 
   return (
     <>
-      <Source id="source" type="geojson" data={JSON.parse(data)} generateId>
+      <Source id="source" type="geojson" data={data}>
         <Layer
           type="fill"
+          id="territory"
           paint={{
-            "fill-color": getColorExpression(name, "fill", "Polygon"),
+            "fill-color": [
+              'case',
+              ['boolean', ['feature-state', 'hover'], false],
+              accent(name, .1),
+              getColorExpression(name, "fill", "Polygon")
+            ],
             'fill-outline-color': getColorExpression(name, "stroke", "Polygon"),
           }}
           filter={['==', '$type', 'Polygon']}
@@ -362,25 +332,32 @@ export default function Map({ width, height, data, name, mobile, params, locked 
           type="line"
           id="guide"
           paint={{
-            "line-color": getColorExpression(name, "stroke", "LineString"),
+            "line-color": [
+              'case',
+              ['boolean', ['feature-state', 'hover'], false],
+              accent(name, 1),
+              getColorExpression(name, "stroke", "LineString")
+            ],
             "line-width": 2,
             "line-dasharray": [10, 4],
           }}
           filter={['==', '$type', 'LineString']}
         />
       </Source>
-      <Tooltip {...tooltip} mobile={mobile} />
-    </>
-  )
-
-  return (
-    <>
-      <AutoResize svg={svg} zoom={zoom} projection={projection} mobile={mobile} width={width} height={height} setTooltip={setTooltip} positionTooltip={positionTooltip} center={CENTER} />
-      <Tooltip {...tooltip} mobile={mobile} />
       <div className="absolute mt-28 ml-11 mr-[.3em] cursor-pointer z-10 bg-[rgba(0,0,0,.3)] rounded-xl zoom-controls" >
         <ZoomIn size={34} onClick={() => map.zoomIn()} className='m-2 hover:stroke-blue-200' />
         <ZoomOut size={34} onClick={() => map.zoomOut()} className='m-2 mt-4 hover:stroke-blue-200' />
       </div>
+      {params.get("search") !== "0" && <SearchBar map={map} name={name} data={data} pan={pan} mobile={mobile} />}
+
+      {/* FOUNDRY */}
+      {/* {params.get("link") && <Link mode={mode} svg={svg} width={width} height={height} projection={projection} mobile={mobile} name={name} params={params} />} */}
+
+      {/* LANCER SOLAR SYSTEMS */}
+      {/* <Sheet {...drawerContent} setDrawerOpen={setDrawerOpen} drawerOpen={drawerOpen} name={name} map={map} /> */}
+
+      <Toolbox mode={mode} width={width} height={height} mobile={mobile} name={name} map={map} />
+      {params.get("hamburger") !== "0" && <Hamburger mode={mode} name={name} c={params.get("c") === "1"} map={map} />}
     </>
   )
 }
