@@ -24,13 +24,13 @@ const nextConfig = {
       }
     ]
   },
-  reactStrictMode: false,
-  experimental: {
-    // outputFileTracingRoot: path.join(__dirname),
-    outputFileTracingIncludes: {
-      "/app/[map]/topojson": ["./app/[map]/topojson/**/*"]
-    }
-  }
+  // reactStrictMode: false,
+  // experimental: {
+  //   // outputFileTracingRoot: path.join(__dirname),
+  //   outputFileTracingIncludes: {
+  //     "/app/[map]/topojson": ["./app/[map]/topojson/**/*"]
+  //   }
+  // }
 };
 
 export default nextConfig;

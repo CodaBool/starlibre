@@ -20,7 +20,6 @@ import { getServerSession } from "next-auth"
 import DOMPurify from "isomorphic-dompurify"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import db from "@/lib/db"
-import * as d3 from 'd3-geo'
 import { ArrowLeft, Star, CircleX } from "lucide-react"
 import style from "../md.module.css"
 // import MiniMap from "@/components/minimap"

@@ -60,6 +60,8 @@ export default function Toolbox({ mode, map, width, height, mobile, name }) {
     document.body.appendChild(text)
 
     map.on('click', e => {
+      if (!mode.has("measure")) return
+
       const features = map.queryRenderedFeatures(e.point, {
         layers: ['measure-points']
       })
@@ -107,6 +109,12 @@ export default function Toolbox({ mode, map, width, height, mobile, name }) {
         } else if (name.includes("lancer")) {
           const km = turf.length(linestring);
           // Janederscore's map is 135ly across. Convert km so they match up
+          const lightYears = km * 0.013043478;
+          const relativeTime = (lightYears / Math.sinh(Math.atanh(0.995))).toFixed(1);
+          text.textContent = `${lightYears.toFixed(1)}ly | ${relativeTime} rel. years (.995u) | ${(lightYears / 0.995).toFixed(1)} observer years`;
+        } else if (name === "starwars") {
+          const km = turf.length(linestring);
+          // TODO: find a conversion and research how hyperspace works
           const lightYears = km * 0.013043478;
           const relativeTime = (lightYears / Math.sinh(Math.atanh(0.995))).toFixed(1);
           text.textContent = `${lightYears.toFixed(1)}ly | ${relativeTime} rel. years (.995u) | ${(lightYears / 0.995).toFixed(1)} observer years`;
