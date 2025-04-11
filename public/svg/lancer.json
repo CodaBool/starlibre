@@ -1,13 +1,15 @@
 [
   "asteroid",
   "capital",
+  "cluster",
   "destroyed",
   "galaxy",
-  "gas",
-  "gate_1",
-  "gate_2",
-  "gate_3",
+  "gate",
+  "gate_alt_1",
+  "gate_alt_2",
   "hole",
+  "hyperspace",
+  "jovian",
   "moon",
   "orbit",
   "ringed_planet",
@@ -15,6 +17,5 @@
   "star",
   "station",
   "sun",
-  "ursa_major",
-  "world"
+  "terrestrial"
 ]

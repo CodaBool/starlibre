@@ -16,6 +16,7 @@ import { domToPng } from 'modern-screenshot'
 import * as turf from '@turf/turf'
 import Hamburger from './hamburger'
 import Toolbox from './toolbox'
+import Starfield from './starfield'
 // import { Calibrate, Link } from './foundry'
 
 let mode = new Set([])
@@ -70,7 +71,7 @@ export default function Map({ width, height, data, name, mobile, params, locked 
   const { map } = useMap()
   const [drawerOpen, setDrawerOpen] = useState()
   const [drawerContent, setDrawerContent] = useState()
-  const { CENTER, SCALE, CLICK_ZOOM, NO_PAN, LAYER_PRIO, LAYOUT_OVERIDE, IGNORE_POLY } = getConsts(name)
+  const { CENTER, SCALE, CLICK_ZOOM, NO_PAN, LAYER_PRIO, LAYOUT_OVERIDE, IGNORE_POLY, UNIT } = getConsts(name)
 
 
   async function pan(d, locations, fit) {
@@ -189,6 +190,7 @@ export default function Map({ width, height, data, name, mobile, params, locked 
       }
 
       // popup
+      if (e.features[0].properties.type === "text") return
       const featureCoordinates = e.features[0].geometry.coordinates.toString();
       if (currentFeatureCoordinates !== featureCoordinates) {
         currentFeatureCoordinates = featureCoordinates;
@@ -266,8 +268,17 @@ export default function Map({ width, height, data, name, mobile, params, locked 
 
   /*
   TODO:
-  - fix other pages
+  ## obvious
+  - something for lancer solar systems
   - toolbox text is above search
+  - draw
+  - fly when clicked = https://maplibre.org/maplibre-gl-js/docs/examples/center-on-symbol/
+
+  ## Map fine tuning
+  - star wars location need to be separated into CANON / LEGENDS
+  - star wars needs the grid
+  - star wars has its own coordinate system
+  - do a webgl check https://maplibre.org/maplibre-gl-js/docs/examples/check-for-support/
   */
 
   return (
@@ -343,7 +354,22 @@ export default function Map({ width, height, data, name, mobile, params, locked 
           }}
           filter={['==', '$type', 'LineString']}
         />
+        <Layer
+          type="symbol"
+          layout={{
+            "text-rotate": 25,
+            "text-offset": [0, 1.3],
+            "text-field": ['get', 'name'],
+            "text-size": 8,
+            "text-optional": false,
+          }}
+          paint={{
+            "text-color": "rgba(255, 255, 255, 0.5)",
+          }}
+          filter={['==', ['get', 'type'], 'text']}
+        />
       </Source>
+      {UNIT === "ly" && <Starfield width={width} height={height} />}
       <div className="absolute mt-28 ml-11 mr-[.3em] cursor-pointer z-10 bg-[rgba(0,0,0,.3)] rounded-xl zoom-controls" >
         <ZoomIn size={34} onClick={() => map.zoomIn()} className='m-2 hover:stroke-blue-200' />
         <ZoomOut size={34} onClick={() => map.zoomOut()} className='m-2 mt-4 hover:stroke-blue-200' />

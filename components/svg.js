@@ -127,26 +127,26 @@ export const hyperspace = `<svg xmlns="http://www.w3.org/2000/svg" width="19" he
 
 export const index = {
   // lancer
-  jovian: "../public/svg/lancer/gas.svg",
-  gate: "../public/svg/lancer/gate_3.svg",
+  jovian: "../public/svg/lancer/jovian.svg",
+  gate: "../public/svg/lancer/gate.svg",
   station: "../public/svg/lancer/station.svg",
   star: "../public/svg/lancer/star.svg",
-  terrestrial: "../public/svg/lancer/world.svg",
+  terrestrial: "../public/svg/lancer/terrestrial.svg",
   moon: "../public/svg/lancer/moon.svg",
-  cluster: "../public/svg/lancer/ursa_major.svg",
+  cluster: "../public/svg/lancer/cluster.svg",
   sector: "../public/svg/lancer/sector.svg",
 
   // fallout
   vault: "../public/svg/fallout/vault.svg",
-  base: "../public/svg/fallout/military.svg",
+  base: "../public/svg/fallout/base.svg",
   settlement: "../public/svg/fallout/settlement.svg",
-  town: "../public/svg/fallout/settlements.svg",
+  town: "../public/svg/fallout/town.svg",
   city: "../public/svg/fallout/city.svg",
-  building: "../public/svg/fallout/big_house.svg",
+  building: "../public/svg/fallout/building.svg",
   cave: "../public/svg/fallout/cave.svg",
-  compound: "../public/svg/fallout/ruins.svg",
-  region: "../public/svg/fallout/mountain.svg",
-  falloutFaction: "../public/svg/fallout/pipboy.svg",
+  compound: "../public/svg/fallout/compound.svg",
+  region: "../public/svg/fallout/region.svg",
+  falloutFaction: "../public/svg/fallout/falloutFaction.svg",
 
   // starwars
   hyperspace: "../public/svg/lancer/hyperspace.svg",
