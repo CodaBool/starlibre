@@ -21,10 +21,8 @@ import { Heart, Github, UserRound, Copyright, Sparkles, Telescope, SquareArrowOu
 import { useEffect, useState } from "react"
 import { getConsts } from "@/lib/utils"
 
-export default function Hamburger({ mode, name, c, map }) {
+export default function Hamburger({ mode, name, params, map, stargazer }) {
   const [check, setCheck] = useState()
-  const [id, setId] = useState()
-  const [editId, setEditId] = useState()
   const { UNIT } = getConsts(name)
 
   function toggle(newMode, skipnull) {
@@ -63,25 +61,9 @@ export default function Hamburger({ mode, name, c, map }) {
   }
 
   useEffect(() => {
-    if (c && !mode.has("crosshair")) {
+    if (params.get("c") && !mode.has("crosshair")) {
       toggle("crosshair", true)
     }
-
-    let urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id')
-    const pathname = window.location.pathname
-    const datetime = pathname.split("/").pop()
-    const idOnPathName = /^\d+$/.test(datetime)
-
-    if (idOnPathName) setEditId(datetime)
-    if (id) setId(id)
-
-    // sometimes the id is created after page load
-    setTimeout(() => {
-      urlParams = new URLSearchParams(window.location.search);
-      const delayedId = urlParams.get('id')
-      if (delayedId) setId(delayedId)
-    }, 500)
   }, [])
 
   return (
@@ -150,15 +132,15 @@ export default function Hamburger({ mode, name, c, map }) {
             <ArrowRightFromLine className="ml-[.6em] inline" /> <span className="ml-[5px]">Export</span>
           </DropdownMenuItem>
         </Link>
-        {id &&
-          <Link href={`/${name}/${id}`}>
+        {!stargazer &&
+          <Link href={`/${name}?id=${params.get("id")}&preview=1`}>
             <DropdownMenuItem className="cursor-pointer">
               <Eye className="ml-[.6em] inline" /> <span className="ml-[5px]">Preview</span>
             </DropdownMenuItem>
           </Link>
         }
-        {editId &&
-          <Link href={`/${name}?id=${editId}`}>
+        {stargazer &&
+          <Link href={`/${name}?id=${params.get("id")}`}>
             <DropdownMenuItem className="cursor-pointer">
               <Pencil className="ml-[.6em] inline" /> <span className="ml-[5px]">Edit</span>
             </DropdownMenuItem>
@@ -168,7 +150,6 @@ export default function Hamburger({ mode, name, c, map }) {
     </DropdownMenu >
   )
 }
-
 
 function Credits({ name }) {
   return (

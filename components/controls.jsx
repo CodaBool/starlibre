@@ -16,6 +16,7 @@ export default function Controls({ name, setDraw, draw, params, setSize }) {
     if (!draw || !mapId) return
     const geojson = draw.getAll()
     if (!geojson.features.length) return
+
     geojson.features.forEach(f => {
       const availableTypes = Object.keys(TYPES).filter(t =>
         f.geometry.type.toLowerCase() === t.split(".")[1]
@@ -52,7 +53,6 @@ export default function Controls({ name, setDraw, draw, params, setSize }) {
 
   useEffect(() => {
     if (!mapId) return
-    // console.log("map id change", mapId)
   }, [mapId])
 
   useEffect(() => {
@@ -95,7 +95,6 @@ export default function Controls({ name, setDraw, draw, params, setSize }) {
       const mId = `${name}-${params.get("id")}`
       const geojson = savedMaps[mId]?.geojson
 
-      console.log("controls id", mId, geojson)
       if (geojson) {
         setMapId(mId)
         draw.add(savedMaps[mId].geojson || {})
@@ -128,7 +127,7 @@ export default function Controls({ name, setDraw, draw, params, setSize }) {
           draw.add(data.geojson)
           return
         } else {
-          // console.log(`need to redirect to /${name}/export page since there are multiple`, key)
+          console.log(`need to redirect to /${name}/export page since there are multiple`, key)
           setSize(null)
           router.push(`/${name}/export`)
           return

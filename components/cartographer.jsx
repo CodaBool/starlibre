@@ -1,13 +1,12 @@
 'use client'
 import { useEffect, useState } from 'react'
 import MapComponent from './map'
-import { combineAndDownload, getConsts, isMobile } from '@/lib/utils'
+import { combineAndDownload, combineLayers, getConsts, isMobile } from '@/lib/utils'
 import Map from 'react-map-gl/maplibre'
 import Controls from './controls.jsx'
 import Editor from './editor'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { create } from 'zustand'
-import { feature } from 'topojson-client'
 import randomName from '@scaleway/random-name'
 
 export const useStore = create((set) => ({
@@ -15,7 +14,7 @@ export const useStore = create((set) => ({
   setEditorTable: editorTable => set({ editorTable }),
 }))
 
-export default function Cartographer({ name, data, stargazer, rawTopojson, mapId }) {
+export default function Cartographer({ name, data, stargazer, fid }) {
   const { SCALE, CENTER, STYLE, VIEW, MAX_ZOOM, MIN_ZOOM, BOUNDS, BG } = getConsts(name)
   const [size, setSize] = useState()
   const mobile = isMobile()
@@ -26,10 +25,9 @@ export default function Cartographer({ name, data, stargazer, rawTopojson, mapId
   VIEW.longitude = params.get("lng") || VIEW.longitude
   VIEW.latitude = params.get("lat") || VIEW.latitude
   const locked = params.get("locked") === "1"
+  if (params.get("preview")) stargazer = true
   const showControls = params.get("controls") !== "0" && !mobile && !stargazer && !locked
   const showEditor = params.get("editor") !== "0" && !mobile && !stargazer && !locked
-
-  let loading = false
 
   useEffect(() => {
     if (params.get("width") && params.get("height")) {
@@ -42,8 +40,7 @@ export default function Cartographer({ name, data, stargazer, rawTopojson, mapId
     }
   }, [])
 
-  // combine server topojson with a local geojson
-  if (rawTopojson && mapId && size) {
+  if (params.get("id")) {
     if (typeof localStorage === 'undefined') {
       return (
         <div className="flex items-center justify-center min-h-screen">
@@ -51,9 +48,8 @@ export default function Cartographer({ name, data, stargazer, rawTopojson, mapId
         </div>
       )
     }
-
     const maps = JSON.parse(localStorage.getItem('maps')) || {}
-    if (mapId === "foundry") {
+    if (params.get("id") === "foundry") {
       const uuid = params.get("uuid")
       fetch(`/api/v1/map/${uuid}`)
         .then(res => res.json())
@@ -91,45 +87,27 @@ export default function Cartographer({ name, data, stargazer, rawTopojson, mapId
             message,
           }, '*');
         })
-    } else if (Object.keys(maps).length > 0) {
-      const localGeojson = maps[name + "-" + mapId]
+    } else if (params.get("preview")) {
+      console.log("preview check")
+      const localGeojson = maps[name + "-" + params.get("id")]
       if (localGeojson?.geojson) {
-        localGeojson.geojson.features = localGeojson.geojson.features.map(feature => {
-          feature.properties.userCreated = true;
-          return feature;
+        localGeojson.geojson.features.forEach(f => {
+          f.properties.userCreated = true
+          f.id = fid++
         })
-        const [rawGeojson, type] = combineAndDownload("topojson", rawTopojson, localGeojson.geojson)
-        const combinedData = JSON.parse(rawGeojson)
-
-        // TODO: the layer name here will be different for each map
-        const layers = Object.keys(combinedData.objects)
-        const newData = layers.reduce((acc, layer) => {
-          acc[layer] = feature(combinedData, combinedData.objects[layer]).features
-          return acc
-        }, {})
-        data = newData
-      } else {
-        setTimeout(() => router.replace(`/${name}`), 200)
-        loading = true
+        console.log("preview these geojsons combined", localGeojson.geojson, data)
+        data = combineLayers([localGeojson.geojson, data])
       }
-    } else {
-      setTimeout(() => router.replace(`/${name}`), 200)
-      loading = true
     }
   }
 
-  // wait until I know how large the window is
-  // this only takes miliseconds it seems, so its fine to wait
-  if (!size || mapId === "foundry") loading = true
-  if (loading) {
+  if (!size) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin inline-block w-8 h-8 border-4 border-current border-t-transparent text-indigo-900 rounded-full" />
       </div>
     )
   }
-
-  console.log("controls", showControls, "editor", showEditor, "locked", locked)
 
   return (
     <>
@@ -152,6 +130,5 @@ export default function Cartographer({ name, data, stargazer, rawTopojson, mapId
       <div style={{ width: size.width, height: size.height, background: `radial-gradient(${BG})`, zIndex: -1, top: 0, position: "absolute" }}></div>
       {showEditor && <Editor draw={draw} mapName={name} params={params} />}
     </>
-
   )
 }

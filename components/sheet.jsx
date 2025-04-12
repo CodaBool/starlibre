@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/sheet"
 import { Badge } from '@/components/ui/badge.jsx'
 import Link from "next/link"
-import { selectAll } from 'd3'
 import { color, accent, genLink } from "@/lib/utils.js"
 import * as SVG from './svg.js'
 import { useMap } from 'react-map-gl/maplibre'
@@ -21,32 +20,32 @@ export default function SheetComponent({ setDrawerOpen, drawerOpen, locations, c
   const { map } = useMap()
 
   function handleMouseOver(properties, geometry) {
-    let className = ".territory"
+    // let className = ".territory"
 
-    if (geometry.type === "LineString") {
-      className = ".guide"
-    } else if (geometry.type === "Point") {
-      className = ".location"
-    }
-    selectAll(className)
-      .filter(d => d.properties.name === properties.name)
-      .classed('animate-pulse', true)
-      .attr('fill', () => className === ".guide" ? "none" : accent(name, 1))
-      .attr('stroke', () => className === ".location" ? null : accent(name, 1))
+    // if (geometry.type === "LineString") {
+    //   className = ".guide"
+    // } else if (geometry.type === "Point") {
+    //   className = ".location"
+    // }
+    // selectAll(className)
+    //   .filter(d => d.properties.name === properties.name)
+    //   .classed('animate-pulse', true)
+    //   .attr('fill', () => className === ".guide" ? "none" : accent(name, 1))
+    //   .attr('stroke', () => className === ".location" ? null : accent(name, 1))
   }
 
   function handleMouseOut(properties, geometry) {
-    let className = ".territory"
-    if (geometry.type === "LineString") {
-      className = ".guide"
-    } else if (geometry.type === "Point") {
-      className = ".location"
-    }
-    selectAll(className)
-      .filter(d => d.properties.name === properties.name)
-      .classed('animate-pulse', false)
-      .attr('fill', d => className === ".guide" ? "none" : color(name, d.properties, "fill", d.geometry.type))
-      .attr('stroke', d => className === ".location" ? null : color(name, d.properties, "stroke", d.geometry.type))
+    // let className = ".territory"
+    // if (geometry.type === "LineString") {
+    //   className = ".guide"
+    // } else if (geometry.type === "Point") {
+    //   className = ".location"
+    // }
+    // selectAll(className)
+    //   .filter(d => d.properties.name === properties.name)
+    //   .classed('animate-pulse', false)
+    //   .attr('fill', d => className === ".guide" ? "none" : color(name, d.properties, "fill", d.geometry.type))
+    //   .attr('stroke', d => className === ".location" ? null : color(name, d.properties, "stroke", d.geometry.type))
   }
 
   function handle(e) {
@@ -63,11 +62,6 @@ export default function SheetComponent({ setDrawerOpen, drawerOpen, locations, c
       } else {
         el.style.bottom = "20px"
       }
-    }
-
-    // remove highlight circle
-    if (document.querySelector(".click-circle") && drawerOpen === false) {
-      document.querySelector(".click-circle").remove()
     }
   }, [drawerOpen])
 

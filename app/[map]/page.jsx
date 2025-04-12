@@ -1,7 +1,6 @@
 export const dynamic = 'force-static'
 import fs from "fs"
 import path from "path"
-import { feature } from 'topojson-client'
 import Cartographer from "@/components/cartographer"
 import { combineAndDownload } from "@/lib/utils"
 
@@ -15,45 +14,19 @@ export default async function mapLobby({ params }) {
 
   // WARN: for some reason a path.resolve is needed here otherwise it cannot find the file
   // even if its just in a console log
-  // path.resolve(`app/[map]/topojson/fallout.json`)
-  // path.resolve(`app/[map]/topojson/lancer.json`)
   path.resolve(`app/[map]/topojson/fallout.json`)
   path.resolve(`app/[map]/topojson/lancer.json`)
-  // path.resolve(`app/[map]/topojson/lancer_test.json`)
   path.resolve(`app/[map]/topojson/lancer_starwall.json`)
   path.resolve(`app/[map]/topojson/starwars.json`)
-  // const content = await fs.promises.readFile(path.resolve(`app/[map]/topojson/${map}.json`), 'utf8')
-  // const content = await fs.promises.readFile(process.cwd() + '/app/fallout/fallout.json', 'utf8')
-  // const content = fs.readFileSync(filePath, 'utf-8')
   const topojson = JSON.parse(content)
 
-  // if (map === "lancer_test" || map === "lancer") {
-  //   return <Cartographer data={topojson} name={map} />
-  // }
-  const [data, type] = combineAndDownload("geojson", topojson, {})
+  const [noIdData, type] = combineAndDownload("geojson", topojson, {})
 
-  // const territory = feature(topojson, topojson.objects.territory)
-  // const location = feature(topojson, topojson.objects.location)
-  // const guide = feature(topojson, topojson.objects.guide)
-  //
-  // console.log(data, territory)
+  let fid = 0
+  const data = JSON.parse(noIdData)
+  data.features.forEach(f => f.id = fid++)
 
-  // TODO: the layer name here will be different for each map
-  // const layers = Object.keys(topojson.objects)
-  // const layerObjects = layers.reduce((acc, layer) => {
-  //   acc[layer] = feature(topojson, topojson.objects[layer]).features
-  //   return acc
-  // }, {})
-  const ensureFeatureIds = (geojson) => {
-    let idCounter = 0
-    geojson.features.forEach(feature => {
-      feature.id = idCounter++;
-    })
-    return geojson
-  }
-
-  return <Cartographer data={ensureFeatureIds(JSON.parse(data))} name={map} />
-  // return <Cartographer data={{ territory, location, guide }} name={map} />
+  return <Cartographer data={data} name={map} fid={fid} />
 }
 
 export async function generateStaticParams() {

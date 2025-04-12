@@ -1,7 +1,6 @@
 export const revalidate = 300 // seconds before a MISS (300 is 5 minutes)
 import fs from "fs"
 import path from "path"
-import { feature } from 'topojson-client'
 import Cartographer from "@/components/cartographer"
 import GeneratingError from "@/components/generatingError"
 import db from "@/lib/db"
@@ -17,43 +16,54 @@ const s3 = new S3Client({
   },
 })
 
+/*
+  This route is similar to /app/[map]/page.jsx
+  but it combines the remote R2 data with the map for a fully published preview
+  it uses caching defined by the revalidate property at the top
+*/
+
+// TODO: should do some sort of try catch here
 export default async function mapLobby({ params }) {
-  const { map, id, searchParams } = await params
-  const skipCombine = id.length === 13 || id === "foundry"
+  const { map, id } = await params
+
   const isUUID = id.length === 36
 
-  let geojson
-  if (!skipCombine) {
-    const mapDB = await db.map.findUnique({
-      where: { id },
-    })
-    if (isUUID && !mapDB) {
-      // probably a new map that's not in the cache yet
-      return <GeneratingError map={map} />
-    }
-    if (!mapDB?.published) {
-      return redirect(`/${map}`)
-    }
-
-    const command = new GetObjectCommand({
-      Bucket: "maps",
-      Key: id,
-      ResponseContentType: "application/json",
-    })
-    const response = await s3.send(command)
-
-
-    // Read stream to buffer
-    const clientGeojson = await response.Body?.transformToString();
-    if (!clientGeojson) throw 'file not found'
-    geojson = JSON.parse(clientGeojson)
-
-    // add a userCreated prop for better contribute links
-    geojson.features = geojson.features.map(feature => {
-      feature.properties.userCreated = true;
-      return feature;
-    })
+  if (!isUUID) {
+    // catch bots
+    return <GeneratingError map={map} error="bad uuid" mapdId={id} />
   }
+
+  const mapDB = await db.map.findUnique({
+    where: { id },
+  })
+  if (isUUID && !mapDB) {
+    // probably a new map that's not in the cache yet
+
+  }
+  if (!mapDB?.published) {
+    return redirect(`/${map}`)
+  }
+
+  const command = new GetObjectCommand({
+    Bucket: "maps",
+    Key: id,
+    ResponseContentType: "application/json",
+  })
+  const response = await s3.send(command)
+
+
+  // Read stream to buffer
+  const clientGeojson = await response.Body?.transformToString();
+  if (!clientGeojson) {
+    return <GeneratingError map={map} error="file not found" />
+  }
+  let geojson = JSON.parse(clientGeojson)
+
+  // add a userCreated prop for better contribute links
+  geojson.features = geojson.features.map(feature => {
+    feature.properties.userCreated = true;
+    return feature;
+  })
 
   const dataDir = path.join(process.cwd(), "/app", "[map]", "topojson");
   const filePath = path.join(dataDir, `${map}.json`)
@@ -66,18 +76,12 @@ export default async function mapLobby({ params }) {
   const content = await fs.promises.readFile(filePath, 'utf8')
 
   const topojson = JSON.parse(content)
-  if (skipCombine) {
-    return <Cartographer rawTopojson={topojson} name={map} mapId={id} stargazer={id !== "foundry"} />
-  }
 
-  const [data, type] = combineAndDownload("topojson", topojson, geojson)
-  const combinedData = JSON.parse(data)
+  const [noIdData, type] = combineAndDownload("geojson", topojson, geojson)
 
-  // TODO: the layer name here will be different for each map
-  const layers = Object.keys(combinedData.objects)
-  const layerObjects = layers.reduce((acc, layer) => {
-    acc[layer] = feature(combinedData, combinedData.objects[layer]).features
-    return acc
-  }, {})
-  return <Cartographer data={layerObjects} name={map} stargazer />
+  let fid = 0
+  const data = JSON.parse(noIdData)
+  data.features.forEach(f => f.id = fid++)
+
+  return <Cartographer data={data} name={map} fid={fid} stargazer />
 }

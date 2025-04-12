@@ -4,6 +4,7 @@ import { Layer, Source, useMap } from 'react-map-gl/maplibre'
 import * as turf from '@turf/turf'
 import { getConsts } from '@/lib/utils'
 
+// TODO: consider useMap
 export default function Toolbox({ mode, map, width, height, mobile, name }) {
   const { UNIT } = getConsts(name)
 
@@ -102,18 +103,23 @@ export default function Toolbox({ mode, map, width, height, mobile, name }) {
 
         geojson.features.push(linestring);
         if (name === "fallout") {
-          const miles = turf.length(linestring, { units: 'miles' });
+          const miles = turf.length(linestring, { units: 'miles' })
+          console.log("miles", miles)
+
           const walkingSpeedMph = 3; // average walking speed in miles per hour
           const walkingTimeHours = miles / walkingSpeedMph;
           text.textContent = `${miles.toFixed(1)} miles | ${walkingTimeHours.toFixed(1)} hours on foot (3mph)`;
         } else if (name.includes("lancer")) {
-          const km = turf.length(linestring);
+          const km = turf.length(linestring)
+          console.log("km", km)
           // Janederscore's map is 135ly across. Convert km so they match up
           const lightYears = km * 0.013043478;
           const relativeTime = (lightYears / Math.sinh(Math.atanh(0.995))).toFixed(1);
           text.textContent = `${lightYears.toFixed(1)}ly | ${relativeTime} rel. years (.995u) | ${(lightYears / 0.995).toFixed(1)} observer years`;
         } else if (name === "starwars") {
-          const km = turf.length(linestring);
+          const km = turf.length(linestring)
+          console.log("km", km)
+
           // TODO: find a conversion and research how hyperspace works
           const lightYears = km * 0.013043478;
           const relativeTime = (lightYears / Math.sinh(Math.atanh(0.995))).toFixed(1);

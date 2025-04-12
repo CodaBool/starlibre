@@ -5,9 +5,8 @@ import maplibregl, {
   LngLatBounds,
 } from 'maplibre-gl'
 import { useMap, Layer, Source, Popup } from 'react-map-gl/maplibre'
-// import { geoPath, geoMercator, geoTransform } from 'd3-geo'
 import { useEffect, useRef, useState } from 'react'
-import { color, important, positionTooltip, accent, getConsts, hashString, getColorExpression, createPopupHTML } from "@/lib/utils.js"
+import { color, important, accent, getConsts, hashString, getColorExpression, createPopupHTML } from "@/lib/utils.js"
 import { ZoomIn, ZoomOut } from "lucide-react"
 import SearchBar from './searchbar'
 import * as SVG from './svg.js'
@@ -17,6 +16,7 @@ import * as turf from '@turf/turf'
 import Hamburger from './hamburger'
 import Toolbox from './toolbox'
 import Starfield from './starfield'
+import Sheet from './sheet'
 // import { Calibrate, Link } from './foundry'
 
 let mode = new Set([])
@@ -25,14 +25,6 @@ export async function getIcon(d, fillRGBA) {
   const icon = d.properties.icon || SVG[d.properties.type]
   const fill = fillRGBA || d.properties.fill
   const stroke = d.properties.stroke
-
-  // if (d.properties.userCreated) {
-  //   // console.log(d)
-  //   window.parent.postMessage({
-  //     type: 'log',
-  //     message: d,
-  //   }, '*')
-  // }
 
   // Apply to all <path>, <circle>, <rect>, etc.
   const forceAttrs = (svg, fill, stroke) => {
@@ -67,7 +59,7 @@ export async function getIcon(d, fillRGBA) {
   return null;
 }
 
-export default function Map({ width, height, data, name, mobile, params, locked }) {
+export default function Map({ width, height, data, name, mobile, params, locked, stargazer }) {
   const { map } = useMap()
   const [drawerOpen, setDrawerOpen] = useState()
   const [drawerContent, setDrawerContent] = useState()
@@ -159,21 +151,6 @@ export default function Map({ width, height, data, name, mobile, params, locked 
     let currentFeatureCoordinates, hoveredStateId
 
     const mouseMove = (e) => {
-
-      // coordinates
-      // if (e.features.length > 0) {
-      //   const coordinates = e.features[0].geometry.coordinates.slice()
-      //   const popupContent = `Coordinates: ${coordinates.join(", ")}`
-      //   new maplibregl.Popup().setLngLat(e.lngLat).setHTML(popupContent).addTo(map)
-      // }
-      // if (mode.has("crosshair")) {
-      //   const { lng, lat } = e.lngLat
-      //   crosshairX.style.left = `${e.point.x}px`
-      //   crosshairY.style.top = `${e.point.y}px`
-      //   crosshairX.style.visibility = 'visible'
-      //   crosshairY.style.visibility = 'visible'
-      // }
-
       // hover
       if (e.features.length > 0) {
         if (hoveredStateId) {
@@ -231,7 +208,6 @@ export default function Map({ width, height, data, name, mobile, params, locked 
       const popupElement = document.querySelector('.maplibregl-popup');
       if (popupElement) {
         popupElement.classList.remove('fade-in');
-        // popupElement.classList.add('fade-out')
       }
       popup.remove()
     }
@@ -243,6 +219,19 @@ export default function Map({ width, height, data, name, mobile, params, locked 
       popup.setLngLat(coordinates).setHTML(popupContent).addTo(map.getMap());
     }
 
+    const locationClick = (e) => {
+      if (mode.has("measure") || (mode.has("crosshair") && mobile) || locked) return
+
+      // lancer 70km
+      const locations = data.features.filter(f => {
+        if (f.geometry.type !== "Point") return
+        // distance in km
+        const d = turf.distance(e.features[0].geometry.coordinates, turf.point(f.geometry.coordinates))
+        return d <= (UNIT === "ly" ? 70 : 20)
+      })
+      pan(e.features[0], locations)
+    }
+
     map.on("viewreset", render)
     map.on("move", render)
     map.on("moveend", render)
@@ -251,6 +240,7 @@ export default function Map({ width, height, data, name, mobile, params, locked 
     map.on('mousemove', 'guide', mouseMove)
     map.on('mouseleave', 'guide', mouseLeave)
     map.on('click', 'territory', territoryClick)
+    map.on('click', 'location', locationClick)
     render()
     return () => {
       map.off("viewreset", render)
@@ -261,6 +251,7 @@ export default function Map({ width, height, data, name, mobile, params, locked 
       map.off('mousemove', 'guide', mouseMove)
       map.off('mouseleave', 'guide', mouseLeave)
       map.off('click', 'territory', territoryClick)
+      map.off('click', 'location', locationClick)
     }
   }, [map])
 
@@ -269,10 +260,10 @@ export default function Map({ width, height, data, name, mobile, params, locked 
   /*
   TODO:
   ## obvious
-  - something for lancer solar systems
+  - drawer for lancer solar systems
   - toolbox text is above search
-  - draw
   - fly when clicked = https://maplibre.org/maplibre-gl-js/docs/examples/center-on-symbol/
+  - clicking on a Point seems to have it click on territory instead. But I only have territory on click so maybe its not a bug
 
   ## Map fine tuning
   - star wars location need to be separated into CANON / LEGENDS
@@ -296,7 +287,15 @@ export default function Map({ width, height, data, name, mobile, params, locked 
             ],
             'fill-outline-color': getColorExpression(name, "stroke", "Polygon"),
           }}
-          filter={['==', '$type', 'Polygon']}
+          filter={["all", ["!=", "type", "line"], ["==", "$type", "Polygon"]]}
+        />
+        <Layer
+          type="fill"
+          paint={{
+            "fill-color": getColorExpression(name, "fill", "Polygon"),
+            'fill-outline-color': getColorExpression(name, "stroke", "Polygon"),
+          }}
+          filter={["all", ["==", "type", "line"], ["==", "$type", "Polygon"]]}
         />
         <Layer
           type="symbol"
@@ -379,11 +378,10 @@ export default function Map({ width, height, data, name, mobile, params, locked 
       {/* FOUNDRY */}
       {/* {params.get("link") && <Link mode={mode} svg={svg} width={width} height={height} projection={projection} mobile={mobile} name={name} params={params} />} */}
 
-      {/* LANCER SOLAR SYSTEMS */}
-      {/* <Sheet {...drawerContent} setDrawerOpen={setDrawerOpen} drawerOpen={drawerOpen} name={name} map={map} /> */}
+      <Sheet {...drawerContent} setDrawerOpen={setDrawerOpen} drawerOpen={drawerOpen} name={name} />
 
       <Toolbox mode={mode} width={width} height={height} mobile={mobile} name={name} map={map} />
-      {params.get("hamburger") !== "0" && <Hamburger mode={mode} name={name} c={params.get("c") === "1"} map={map} />}
+      {params.get("hamburger") !== "0" && <Hamburger mode={mode} name={name} params={params} map={map} stargazer={stargazer} />}
     </>
   )
 }
