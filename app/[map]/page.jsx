@@ -2,7 +2,7 @@ export const dynamic = 'force-static'
 import fs from "fs"
 import path from "path"
 import Cartographer from "@/components/cartographer"
-import { combineAndDownload } from "@/lib/utils"
+import { combineAndDownload, important } from "@/lib/utils"
 
 export default async function mapLobby({ params }) {
   const dataDir = path.join(process.cwd(), "/app", "[map]", "topojson");
@@ -24,7 +24,14 @@ export default async function mapLobby({ params }) {
 
   let fid = 0
   const data = JSON.parse(noIdData)
-  data.features.forEach(f => f.id = fid++)
+  data.features.forEach(f => {
+    if (important(map, f.properties)) {
+      f.properties.priority = 1
+    } else {
+      f.properties.priority = 9
+    }
+    f.id = fid++
+  })
 
   return <Cartographer data={data} name={map} fid={fid} />
 }

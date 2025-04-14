@@ -1,14 +1,26 @@
+// TODO: try to switch back to MapboxDraw
 // import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import { useControl } from 'react-map-gl/maplibre'
 import MapboxDraw from "@hyvilo/maplibre-gl-draw"
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import randomName from '@scaleway/random-name'
 import { useRouter } from 'next/navigation'
 import { getConsts, accent } from '@/lib/utils'
+import { create } from 'zustand'
 
-export default function Controls({ name, setDraw, draw, params, setSize }) {
+export const useDraw = create(set => ({
+  draw: null,
+  setDraw: draw => set({ draw }),
+  recreateListeners: null,
+  setRecreateListeners: () => set({ recreateListeners: Math.random() }),
+}))
+
+export default function Controls({ name, params, setSize }) {
   const [saveTrigger, setSaveTrigger] = useState()
   const [mapId, setMapId] = useState()
+  const draw = useDraw(d => d.draw)
+  const setDraw = useDraw(d => d.setDraw)
+  const setRecreateListeners = useDraw(d => d.setRecreateListeners)
   const router = useRouter()
   const { TYPES } = getConsts(name)
 
@@ -39,7 +51,7 @@ export default function Controls({ name, setDraw, draw, params, setSize }) {
         draw.add(f)
       }
     })
-    // console.log("ah finished addin these keys, now i can go down for a long nap and watch tiktok", geojson)
+
     const prev = JSON.parse(localStorage.getItem('maps')) || {}
     localStorage.setItem('maps', JSON.stringify({
       ...prev, [mapId]: {
@@ -52,11 +64,9 @@ export default function Controls({ name, setDraw, draw, params, setSize }) {
   }, [saveTrigger, mapId])
 
   useEffect(() => {
-    if (!mapId) return
-  }, [mapId])
-
-  useEffect(() => {
     if (!draw) return
+    // hacky solution to prevent draw being used before initialization
+    try { draw.getAll() } catch (error) { return }
     const savedMaps = JSON.parse(localStorage.getItem('maps')) || {}
     const mapsWithData = Object.keys(savedMaps).filter(id => id.split('-')[0] === name)
 
@@ -117,7 +127,7 @@ export default function Controls({ name, setDraw, draw, params, setSize }) {
       } else {
         daysAgo = daysAgo + " days ago"
       }
-      console.log("found", mapsWithData.length, "previous maps for", mapName, "from", daysAgo)
+      // console.log("found", mapsWithData.length, "previous maps for", mapName, "from", daysAgo)
       // TODO: need a way to have multiple stored maps for the same map
       const restore = window.confirm(`${mapsWithData.length === 1 ? "A previous session was found" : mapsWithData.length + " previous sessions found, one"} from ${daysAgo}. Would you like to ${mapsWithData.length === 1 ? "restore this session" : "choose a session to restore"}?`)
       if (restore) {
@@ -148,19 +158,21 @@ export default function Controls({ name, setDraw, draw, params, setSize }) {
         return
       }
     }
-  }, [draw]);
+  }, [draw])
 
-  function s(data) {
-    // unsavedData = data
+  function s() {
     if (document.querySelector(".unsaved-text")) {
       document.querySelector(".unsaved-text").style.visibility = 'visible'
     }
+    setRecreateListeners()
     setSaveTrigger(p => !p)
   }
 
   // MapboxDrawOptions
   // https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/mapbox__mapbox-gl-draw/index.d.ts
+
   const d = useControl(
+    // create
     () => new MapboxDraw({
       touchEnabled: true,
       controls: {
@@ -168,16 +180,19 @@ export default function Controls({ name, setDraw, draw, params, setSize }) {
         uncombine_features: false,
       }
     }),
+    // add
     ({ map }) => {
       map.on('draw.create', s);
       map.on('draw.update', s);
       map.on('draw.delete', s);
     },
+    // remove
     ({ map }) => {
       map.off('draw.create', s);
       map.off('draw.update', s);
       map.off('draw.delete', s);
     },
+    // options
     {
       position: "top-right"
     }

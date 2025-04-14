@@ -6,7 +6,7 @@ import GeneratingError from "@/components/generatingError"
 import db from "@/lib/db"
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3"
 import { redirect } from "next/navigation"
-import { combineAndDownload } from "@/lib/utils"
+import { combineAndDownload, important } from "@/lib/utils"
 const s3 = new S3Client({
   region: "auto",
   endpoint: `https://${process.env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -81,7 +81,14 @@ export default async function mapLobby({ params }) {
 
   let fid = 0
   const data = JSON.parse(noIdData)
-  data.features.forEach(f => f.id = fid++)
+  data.features.forEach(f => {
+    if (important(map, f.properties)) {
+      f.properties.priority = 1
+    } else {
+      f.properties.priority = 9
+    }
+    f.id = fid++
+  })
 
   return <Cartographer data={data} name={map} fid={fid} stargazer />
 }

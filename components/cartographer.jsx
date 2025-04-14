@@ -88,14 +88,12 @@ export default function Cartographer({ name, data, stargazer, fid }) {
           }, '*');
         })
     } else if (params.get("preview")) {
-      console.log("preview check")
       const localGeojson = maps[name + "-" + params.get("id")]
       if (localGeojson?.geojson) {
         localGeojson.geojson.features.forEach(f => {
           f.properties.userCreated = true
           f.id = fid++
         })
-        console.log("preview these geojsons combined", localGeojson.geojson, data)
         data = combineLayers([localGeojson.geojson, data])
       }
     }
@@ -125,10 +123,10 @@ export default function Cartographer({ name, data, stargazer, fid }) {
         mapStyle={STYLE}
       >
         <MapComponent width={size.width} height={size.height} name={name} data={data} mobile={mobile} SCALE={SCALE} CENTER={CENTER} params={params} stargazer={stargazer} locked={locked} />
-        {showControls && <Controls setDraw={setDraw} draw={draw} name={name} params={params} setSize={setSize} />}
+        {showControls && <Controls name={name} params={params} setSize={setSize} />}
       </Map>
+      {showEditor && <Editor mapName={name} params={params} />}
       <div style={{ width: size.width, height: size.height, background: `radial-gradient(${BG})`, zIndex: -1, top: 0, position: "absolute" }}></div>
-      {showEditor && <Editor draw={draw} mapName={name} params={params} />}
     </>
   )
 }

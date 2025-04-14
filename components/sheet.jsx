@@ -11,41 +11,27 @@ import {
 } from "@/components/ui/sheet"
 import { Badge } from '@/components/ui/badge.jsx'
 import Link from "next/link"
-import { color, accent, genLink } from "@/lib/utils.js"
+import { color, accent, genLink, getConsts } from "@/lib/utils.js"
 import * as SVG from './svg.js'
 import { useMap } from 'react-map-gl/maplibre'
 import { useEffect } from "react"
 
 export default function SheetComponent({ setDrawerOpen, drawerOpen, locations, coordinates, name, selected }) {
   const { map } = useMap()
+  const { UNIT } = getConsts(name)
 
-  function handleMouseOver(properties, geometry) {
-    // let className = ".territory"
-
-    // if (geometry.type === "LineString") {
-    //   className = ".guide"
-    // } else if (geometry.type === "Point") {
-    //   className = ".location"
-    // }
-    // selectAll(className)
-    //   .filter(d => d.properties.name === properties.name)
-    //   .classed('animate-pulse', true)
-    //   .attr('fill', () => className === ".guide" ? "none" : accent(name, 1))
-    //   .attr('stroke', () => className === ".location" ? null : accent(name, 1))
+  function handleMouseOver({ id }) {
+    map.setFeatureState(
+      { source: 'source', id },
+      { hover: true }
+    )
   }
 
-  function handleMouseOut(properties, geometry) {
-    // let className = ".territory"
-    // if (geometry.type === "LineString") {
-    //   className = ".guide"
-    // } else if (geometry.type === "Point") {
-    //   className = ".location"
-    // }
-    // selectAll(className)
-    //   .filter(d => d.properties.name === properties.name)
-    //   .classed('animate-pulse', false)
-    //   .attr('fill', d => className === ".guide" ? "none" : color(name, d.properties, "fill", d.geometry.type))
-    //   .attr('stroke', d => className === ".location" ? null : color(name, d.properties, "stroke", d.geometry.type))
+  function handleMouseOut({ id }) {
+    map.setFeatureState(
+      { source: 'source', id },
+      { hover: false }
+    )
   }
 
   function handle(e) {
@@ -69,8 +55,8 @@ export default function SheetComponent({ setDrawerOpen, drawerOpen, locations, c
     <Sheet onOpenChange={setDrawerOpen} open={drawerOpen} modal={false} style={{ color: 'white' }}>
       <SheetContent side="bottom" style={{ maxHeight: '38vh', overflowY: 'auto' }} className="map-sheet" onPointerDownOutside={handle}>
         <SheetHeader >
-          <SheetTitle className="text-center">{coordinates ? `lat: ${Math.floor(coordinates[1])}, lng: ${Math.floor(coordinates[0])}` : 'unknown'}</SheetTitle>
-          <SheetDescription />
+          <SheetTitle className="text-center">{coordinates ? `${UNIT === "ly" ? "Y" : "lat"}: ${Math.floor(coordinates[1])}, ${UNIT === "ly" ? "X" : "lat"}: ${Math.floor(coordinates[0])}` : 'unknown'}</SheetTitle>
+          {locations?.length > 1 && <SheetDescription className="text-center" >Nearby Locations</SheetDescription>}
         </SheetHeader >
         <div className="flex flex-wrap justify-center">
           {locations?.map((d, index) => {
@@ -85,8 +71,8 @@ export default function SheetComponent({ setDrawerOpen, drawerOpen, locations, c
             const card = (
               <Card
                 className="min-h-[80px] m-2 min-w-[150px] cursor-pointer"
-                onMouseOver={() => handleMouseOver(properties, geometry)}
-                onMouseOut={() => handleMouseOut(properties, geometry)}
+                onMouseOver={() => handleMouseOver(d)}
+                onMouseOut={() => handleMouseOut(d)}
               >
                 <CardContent className={`p-2 text-center ${selected === properties.name ? 'bg-yellow-800' : 'hover:bg-yellow-950'}`}>
                   {properties.unofficial && <Badge variant="destructive" className="mx-auto">unofficial</Badge>}

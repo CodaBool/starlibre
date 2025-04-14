@@ -170,7 +170,7 @@ export default function IconSelector({ onSelect, mapName, show }) {
                       </a>
                     </li>
                   )}
-                  {mapName === "lancer" && (
+                  {mapName.includes("lancer") && (
                     <li>
                       Lancer icons are from {' '}
                       <a

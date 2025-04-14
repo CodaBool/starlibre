@@ -7,9 +7,11 @@ import { X } from "lucide-react";
 import { getConsts } from "@/lib/utils";
 import { getIcon } from "./map";
 import { useStore } from "./cartographer";
+import { useDraw } from "./controls";
 
-export default function Editor({ draw, mapName, params }) {
+export default function Editor({ mapName, params }) {
   const { map } = useMap()
+  const draw = useDraw(s => s.draw)
   const [popup, setPopup] = useState()
   const { TYPES } = getConsts(mapName)
   const { setEditorTable } = useStore()

@@ -5,7 +5,7 @@ import maplibregl, {
   LngLatBounds,
 } from 'maplibre-gl'
 import { useMap, Layer, Source, Popup } from 'react-map-gl/maplibre'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { color, important, accent, getConsts, hashString, getColorExpression, createPopupHTML } from "@/lib/utils.js"
 import { ZoomIn, ZoomOut } from "lucide-react"
 import SearchBar from './searchbar'
@@ -17,9 +17,10 @@ import Hamburger from './hamburger'
 import Toolbox from './toolbox'
 import Starfield from './starfield'
 import Sheet from './sheet'
+import { useDraw } from "./controls";
 // import { Calibrate, Link } from './foundry'
 
-let mode = new Set([])
+let popup, mode = new Set([])
 
 export async function getIcon(d, fillRGBA) {
   const icon = d.properties.icon || SVG[d.properties.type]
@@ -60,21 +61,21 @@ export async function getIcon(d, fillRGBA) {
 }
 
 export default function Map({ width, height, data, name, mobile, params, locked, stargazer }) {
-  const { map } = useMap()
+  const { map: wrapper } = useMap()
   const [drawerOpen, setDrawerOpen] = useState()
   const [drawerContent, setDrawerContent] = useState()
+  const recreateListeners = useDraw(s => s.recreateListeners)
   const { CENTER, SCALE, CLICK_ZOOM, NO_PAN, LAYER_PRIO, LAYOUT_OVERIDE, IGNORE_POLY, UNIT } = getConsts(name)
-
 
   async function pan(d, locations, fit) {
     if (locked && !fit) return
     mode.add("zooming")
     let fly = true, lat, lng, bounds, coordinates = d.geometry.coordinates
-    let zoomedOut = map.getZoom() < 6
+    let zoomedOut = wrapper.getZoom() < 6
 
     // force a zoom if panning to location by search
     if (fit) zoomedOut = true
-    let zoom = map.getZoom()
+    let zoom = wrapper.getZoom()
 
     if (d.geometry.type === "Point") {
       [lng, lat] = coordinates
@@ -104,15 +105,15 @@ export default function Map({ width, height, data, name, mobile, params, locked,
     // TODO: doesn't this always need to be done?
     if (zoomedOut) {
       const arbitraryNumber = locations?.length > 5 ? 9.5 : 10
-      let zoomFactor = Math.pow(2, arbitraryNumber - map.getZoom())
+      let zoomFactor = Math.pow(2, arbitraryNumber - wrapper.getZoom())
       zoomFactor = Math.max(zoomFactor, 4)
-      const latDiff = (map.getBounds().getNorth() - map.getBounds().getSouth()) / zoomFactor
+      const latDiff = (wrapper.getBounds().getNorth() - wrapper.getBounds().getSouth()) / zoomFactor
       lat = coordinates[1] - latDiff / 2
     }
 
     if (fly) {
       if (bounds) {
-        map.fitBounds([
+        wrapper.fitBounds([
           [bounds[0], bounds[1]], // bottom-left corner
           [bounds[2], bounds[3]]  // top-right corner
         ], {
@@ -120,7 +121,7 @@ export default function Map({ width, height, data, name, mobile, params, locked,
           padding: { top: 50, bottom: 50, left: 50, right: 50 },
         });
       } else {
-        map.flyTo({ center: [lng, lat], duration: 800, zoom })
+        wrapper.flyTo({ center: [lng, lat], duration: 800, zoom })
       }
       setTimeout(() => mode.delete("zooming"), 801)
     }
@@ -129,25 +130,7 @@ export default function Map({ width, height, data, name, mobile, params, locked,
     setDrawerOpen(true)
   }
 
-  useEffect(() => {
-    if (!map) return
-
-    function render() {
-      if (mode.has("measureStart")) {
-        mode.delete("measureStart")
-      } else if (mode.has("crosshairZoom")) {
-        mode.delete("crosshairZoom")
-      }
-    }
-
-    const popup = new maplibregl.Popup({
-      closeButton: false,
-      offset: [0, 20],
-      closeOnClick: false,
-      maxWidth: "340px",
-      anchor: "top",
-      className: "fade-in"
-    });
+  function listeners({ target: map }) {
     let currentFeatureCoordinates, hoveredStateId
 
     const mouseMove = (e) => {
@@ -173,7 +156,7 @@ export default function Map({ width, height, data, name, mobile, params, locked,
         currentFeatureCoordinates = featureCoordinates;
 
         // Change the cursor style as a UI indicator.
-        map.getCanvas().style.cursor = 'pointer';
+        if (e.features[0].geometry.type === "Point") wrapper.getCanvas().style.cursor = 'pointer'
 
         let coordinates = e.features[0].geometry.coordinates.slice();
         const popupContent = createPopupHTML(e)
@@ -191,9 +174,10 @@ export default function Map({ width, height, data, name, mobile, params, locked,
         if (!coordinates) {
           console.error("failed to get coordinates", coordinates, e)
         }
-        popup.setLngLat(coordinates).setHTML(popupContent).addTo(map.getMap())
+        popup.setLngLat(coordinates).setHTML(popupContent).addTo(wrapper.getMap())
       }
     }
+
     const mouseLeave = (e) => {
       if (hoveredStateId) {
         map.setFeatureState(
@@ -204,7 +188,7 @@ export default function Map({ width, height, data, name, mobile, params, locked,
       hoveredStateId = null;
 
       currentFeatureCoordinates = undefined;
-      map.getCanvas().style.cursor = ''
+      wrapper.getCanvas().style.cursor = ''
       const popupElement = document.querySelector('.maplibregl-popup');
       if (popupElement) {
         popupElement.classList.remove('fade-in');
@@ -216,15 +200,15 @@ export default function Map({ width, height, data, name, mobile, params, locked,
       if (IGNORE_POLY.includes(e.features[0].properties.type)) return
       const coordinates = e.lngLat;
       const popupContent = createPopupHTML(e)
-      popup.setLngLat(coordinates).setHTML(popupContent).addTo(map.getMap());
+      popup.setLngLat(coordinates).setHTML(popupContent).addTo(wrapper.getMap());
     }
 
     const locationClick = (e) => {
       if (mode.has("measure") || (mode.has("crosshair") && mobile) || locked) return
-
-      // lancer 70km
       const locations = data.features.filter(f => {
         if (f.geometry.type !== "Point") return
+        // always include yourself
+        if (e.features[0].id === f.id) return true
         // distance in km
         const d = turf.distance(e.features[0].geometry.coordinates, turf.point(f.geometry.coordinates))
         return d <= (UNIT === "ly" ? 70 : 20)
@@ -232,39 +216,71 @@ export default function Map({ width, height, data, name, mobile, params, locked,
       pan(e.features[0], locations)
     }
 
-    map.on("viewreset", render)
-    map.on("move", render)
-    map.on("moveend", render)
+    const ensureCheckbox = () => {
+      if (mode.has("measureStart")) {
+        mode.delete("measureStart")
+      } else if (mode.has("crosshairZoom")) {
+        mode.delete("crosshairZoom")
+      }
+    }
+
+    map.off("move", ensureCheckbox)
+    map.off('mousemove', 'location', mouseMove)
+    map.off('mouseleave', 'location', mouseLeave)
+    map.off('mousemove', 'guide', mouseMove)
+    map.off('mouseleave', 'guide', mouseLeave)
+    map.off('click', 'territory', territoryClick)
+    map.off('click', 'location', locationClick)
+
+    map.on("move", ensureCheckbox)
     map.on('mousemove', 'location', mouseMove)
     map.on('mouseleave', 'location', mouseLeave)
     map.on('mousemove', 'guide', mouseMove)
     map.on('mouseleave', 'guide', mouseLeave)
     map.on('click', 'territory', territoryClick)
     map.on('click', 'location', locationClick)
-    render()
-    return () => {
-      map.off("viewreset", render)
-      map.off("move", render)
-      map.off("moveend", render)
-      map.off('mousemove', 'location', mouseMove)
-      map.off('mouseleave', 'location', mouseLeave)
-      map.off('mousemove', 'guide', mouseMove)
-      map.off('mouseleave', 'guide', mouseLeave)
-      map.off('click', 'territory', territoryClick)
-      map.off('click', 'location', locationClick)
-    }
-  }, [map])
+  }
+
+  useEffect(() => {
+    if (!wrapper) return
+    listeners({ target: wrapper })
+  }, [wrapper, recreateListeners, params.get("preview")])
+
+  useEffect(() => {
+    // wrapper.on("load", listeners)
+    popup = new maplibregl.Popup({
+      closeButton: false,
+      offset: [0, 20],
+      closeOnClick: false,
+      maxWidth: "340px",
+      anchor: "top",
+      className: "fade-in"
+    })
+  }, [])
 
   if (locked || params.get("calibrate")) return null
 
+  // add all custom icons
+  if (wrapper) {
+    data.features.forEach(f => {
+      if (f.properties.icon) {
+        if (!wrapper.hasImage(f.properties.icon)) {
+          // console.log("adding icon for", f.properties.name)
+          const img = new Image()
+          img.crossOrigin = "anonymous"
+          img.width = 19
+          img.height = 19
+          img.src = f.properties.icon
+          img.onload = () => {
+            wrapper.addImage(f.properties.icon, img, { sdf: true })
+          }
+        }
+      }
+    })
+  }
+
   /*
   TODO:
-  ## obvious
-  - drawer for lancer solar systems
-  - toolbox text is above search
-  - fly when clicked = https://maplibre.org/maplibre-gl-js/docs/examples/center-on-symbol/
-  - clicking on a Point seems to have it click on territory instead. But I only have territory on click so maybe its not a bug
-
   ## Map fine tuning
   - star wars location need to be separated into CANON / LEGENDS
   - star wars needs the grid
@@ -310,7 +326,15 @@ export default function Map({ width, height, data, name, mobile, params, locked,
             // "text-anchor": "top",
             "text-offset": [0, 1.3],
             "icon-padding": 0, // default 2
-            "icon-image": ["get", "type"],
+
+
+            // "icon-image": ["get", "icon"],
+            "icon-image": [
+              "coalesce",
+              ["get", "icon"],
+              ["get", "type"]
+            ],
+
             // fallback image example 1
             // "icon-image": ["coalesce", ["image", "myImage"], ["image", "fallbackImage"]],
             // fallback image example 2
@@ -370,18 +394,18 @@ export default function Map({ width, height, data, name, mobile, params, locked,
       </Source>
       {UNIT === "ly" && <Starfield width={width} height={height} />}
       <div className="absolute mt-28 ml-11 mr-[.3em] cursor-pointer z-10 bg-[rgba(0,0,0,.3)] rounded-xl zoom-controls" >
-        <ZoomIn size={34} onClick={() => map.zoomIn()} className='m-2 hover:stroke-blue-200' />
-        <ZoomOut size={34} onClick={() => map.zoomOut()} className='m-2 mt-4 hover:stroke-blue-200' />
+        <ZoomIn size={34} onClick={() => wrapper.zoomIn()} className='m-2 hover:stroke-blue-200' />
+        <ZoomOut size={34} onClick={() => wrapper.zoomOut()} className='m-2 mt-4 hover:stroke-blue-200' />
       </div>
-      {params.get("search") !== "0" && <SearchBar map={map} name={name} data={data} pan={pan} mobile={mobile} />}
+      {params.get("search") !== "0" && <SearchBar map={wrapper} name={name} data={data} pan={pan} mobile={mobile} />}
 
       {/* FOUNDRY */}
       {/* {params.get("link") && <Link mode={mode} svg={svg} width={width} height={height} projection={projection} mobile={mobile} name={name} params={params} />} */}
 
       <Sheet {...drawerContent} setDrawerOpen={setDrawerOpen} drawerOpen={drawerOpen} name={name} />
 
-      <Toolbox mode={mode} width={width} height={height} mobile={mobile} name={name} map={map} />
-      {params.get("hamburger") !== "0" && <Hamburger mode={mode} name={name} params={params} map={map} stargazer={stargazer} />}
+      <Toolbox mode={mode} width={width} height={height} mobile={mobile} name={name} map={wrapper} />
+      {params.get("hamburger") !== "0" && <Hamburger mode={mode} name={name} params={params} map={wrapper} stargazer={stargazer} />}
     </>
   )
 }

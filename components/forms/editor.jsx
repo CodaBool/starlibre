@@ -395,7 +395,8 @@ export default function EditorForm({ feature, draw, setPopup, mapName, popup, pa
           Save
         </Button>
       }
-      <IconSelector mapName={mapName} onSelect={selectIcon} show={(!isAddingRow && !editorTable && !feature.properties.icon)} />
+
+      <IconSelector mapName={mapName.includes("lancer") ? "lancer" : mapName} onSelect={selectIcon} show={(!isAddingRow && !editorTable && !feature.properties.icon)} />
       {params.get("link") && <Link editProp={editProp} handleSave={handleSave} />}
     </div >
   )
