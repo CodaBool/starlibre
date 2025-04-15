@@ -197,7 +197,7 @@ export default function Map({ width, height, data, name, mobile, params, locked,
     }
 
     const territoryClick = (e) => {
-      if (IGNORE_POLY.includes(e.features[0].properties.type)) return
+      if (IGNORE_POLY?.includes(e.features[0].properties.type)) return
       const coordinates = e.lngLat;
       const popupContent = createPopupHTML(e)
       popup.setLngLat(coordinates).setHTML(popupContent).addTo(wrapper.getMap());
@@ -243,85 +243,58 @@ export default function Map({ width, height, data, name, mobile, params, locked,
 
   useEffect(() => {
     if (!wrapper) return
-    // capture a webp screenshot
     if (params.get("img")) {
       wrapper.on('load', async ({ target: map }) => {
-        const userMadeLocations = data.features.filter(d => {
-          if (d.geometry.type !== "Point") return
-          return d.properties.userCreated && wrapper.getBounds().contains(new maplibregl.LngLat(d.geometry.coordinates[0], d.geometry.coordinates[1]))
+
+        // hide labels since map notes will be created
+        const userCreated = map.querySourceFeatures('source', {
+          sourceLayer: "location",
+          filter: ['==', ['get', 'userCreated'], true]
         })
-        console.log("User made locations currently on screen:", userMadeLocations)
-
-        window.parent.postMessage({
-          type: 'log',
-          message: userMadeLocations,
-        }, '*')
-
-        // all userMadeLocations should have an icon prop added which uses
-        userMadeLocations.forEach(location => {
-          if (!location.properties.icon) {
-            const type = location.properties.type;
-            location.properties.icon = `https://raw.githubusercontent.com/CodaBool/starlibre/refs/heads/main/public/svg/default/${type}.svg`;
-          }
+        userCreated.forEach(({ id }) => {
+          map.setFeatureState(
+            { source: 'source', id },
+            { hideLabel: true },
+          )
         })
 
-        const userMadeLocationsWithPixels = userMadeLocations.map(location => {
-          const point = map.project(new maplibregl.LngLat(location.geometry.coordinates[0], location.geometry.coordinates[1]))
-          return {
-            ...location,
-            pixelCoordinates: {
-              top: point.y,
-              left: point.x
+        // wait for state change to happen
+        map.once('idle', ({ target: map }) => {
+          // window.parent.postMessage({
+          //   type: 'log',
+          //   message: userCreated,
+          // }, '*')
+
+          // all userMadeLocations should have an icon prop added which uses
+          userCreated.forEach(location => {
+            if (!location.properties.icon) {
+              const type = location.properties.type
+              location.properties.icon = `https://raw.githubusercontent.com/CodaBool/starlibre/refs/heads/main/public/svg/default/${type}.svg`;
             }
-          };
+          })
+
+          // TODO: support more than Point features
+          const userMadeLocationsWithPixels = userCreated.filter(f => f.geometry.type === "Point").map(location => {
+            const point = map.project(new maplibregl.LngLat(location.geometry.coordinates[0], location.geometry.coordinates[1]))
+            return {
+              ...location,
+              pixelCoordinates: {
+                top: point.y,
+                left: point.x
+              }
+            };
+          })
+
+          window.parent.postMessage({
+            type: 'featureData',
+            featureData: userMadeLocationsWithPixels,
+          }, '*')
+
+          window.parent.postMessage({
+            type: 'webpImage',
+            webpImage: map.getCanvas().toDataURL(),
+          }, '*')
         })
-
-        const userLocationElements = document.querySelectorAll('.user.location');
-
-        window.parent.postMessage({
-          type: 'featureData',
-          featureData: userMadeLocationsWithPixels,
-        }, '*')
-
-        window.parent.postMessage({
-          type: 'log',
-          message: "waiting for icons",
-        }, '*')
-
-        const checkIconsLoaded = async () => {
-          const checkInterval = 100; // milliseconds
-          const maxAttempts = 100; // maximum number of attempts before giving up
-          let attempts = 0;
-
-          while (attempts < maxAttempts) {
-            const allIconsLoaded = Array.from(userLocationElements).every(element => {
-              const svgContent = element.innerHTML
-              if (!svgContent && svgContent.includes('<svg')) console.log("loading icon", element, attempts, "/", maxAttempts)
-              return svgContent && svgContent.includes('<svg');
-            });
-
-            if (allIconsLoaded) {
-              return true;
-            }
-
-            await new Promise(resolve => setTimeout(resolve, checkInterval));
-            attempts++;
-          }
-
-          return false;
-        };
-
-        await checkIconsLoaded();
-
-        window.parent.postMessage({
-          type: 'log',
-          message: "icons loaded",
-        }, '*')
-
-        window.parent.postMessage({
-          type: 'webpImage',
-          webpImage: map.getCanvas().toDataURL(),
-        }, '*')
       });
     }
     listeners({ target: wrapper })
@@ -432,6 +405,12 @@ export default function Map({ width, height, data, name, mobile, params, locked,
           }}
           paint={{
             "text-color": "#ffffff",
+            'text-opacity': [
+              'case',
+              ['boolean', ['feature-state', 'hideLabel'], false],
+              0,
+              1,
+            ],
             "icon-color": [
               'case',
               ['boolean', ['feature-state', 'hover'], false],

@@ -127,19 +127,19 @@ export default function Hamburger({ mode, name, params, map, stargazer, mobile }
             <HeartHandshake className="ml-[.6em] inline" /> <span className="ml-[5px]">Contribute</span>
           </DropdownMenuItem>
         </Link>
-        {!mobile && <Link href={`/${name}/export`}>
+        {(!mobile && !params.get("simple")) && <Link href={`/${name}/export`}>
           <DropdownMenuItem className="cursor-pointer">
             <ArrowRightFromLine className="ml-[.6em] inline" /> <span className="ml-[5px]">Export</span>
           </DropdownMenuItem>
         </Link>}
-        {(!stargazer && !mobile) &&
+        {(!stargazer && !mobile && !params.get("simple")) &&
           <Link href={`/${name}?id=${params.get("id")}&preview=1`}>
             <DropdownMenuItem className="cursor-pointer">
               <Eye className="ml-[.6em] inline" /> <span className="ml-[5px]">Preview</span>
             </DropdownMenuItem>
           </Link>
         }
-        {(stargazer && !mobile) &&
+        {(stargazer && !mobile && !params.get("simple")) &&
           <Link href={`/${name}?id=${params.get("id")}`}>
             <DropdownMenuItem className="cursor-pointer">
               <Pencil className="ml-[.6em] inline" /> <span className="ml-[5px]">Edit</span>

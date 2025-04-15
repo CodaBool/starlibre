@@ -121,6 +121,7 @@ export default function Cartographer({ name, data, stargazer, fid }) {
         minZoom={MIN_ZOOM}
         style={{ width: size.width, height: size.height }}
         mapStyle={STYLE}
+        pixelRatio={2}
       >
         <MapComponent width={size.width} height={size.height} name={name} data={data} mobile={mobile} SCALE={SCALE} CENTER={CENTER} params={params} stargazer={stargazer} locked={locked} />
         {showControls && <Controls name={name} params={params} setSize={setSize} />}
