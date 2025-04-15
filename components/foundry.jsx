@@ -14,19 +14,6 @@ export function Calibrate({ mode, width, height, mobile, name }) {
   const { map } = useMap()
   const { UNIT } = getConsts(name)
 
-  // duplicate of toolbox
-  function handleMove() {
-    const { lng, lat } = map.getCenter()
-    crosshairX.style.visibility = 'visible'
-    crosshairY.style.visibility = 'visible'
-    if (UNIT === "ly") {
-      text.textContent = `Y: ${lat.toFixed(1)} | X: ${lng.toFixed(1)}`;
-    } else {
-      text.textContent = `Lat: ${lat.toFixed(3)}° | Lng: ${lng.toFixed(3)}°`;
-    }
-    text.style.visibility = 'visible'
-  }
-
   useEffect(() => {
     if (!map) return
 
@@ -98,12 +85,6 @@ export function Calibrate({ mode, width, height, mobile, name }) {
       const autoZoom = Number(map.getZoom().toFixed(2))
       const autoLat = Number(center.lat.toFixed(3))
       const autoLng = Number(center.lng.toFixed(3))
-      console.log('submitting', {
-        type: 'calibrate',
-        autoZoom,
-        autoLat,
-        autoLng,
-      })
 
       window.parent.postMessage({
         type: 'calibrate',
@@ -114,9 +95,7 @@ export function Calibrate({ mode, width, height, mobile, name }) {
     })
     document.body.appendChild(button)
 
-    // translate this
-
-
+    // coordinate text
     const updateCenterCoordinates = () => {
       const { lat, lng } = map.getCenter()
       if (UNIT === "ly") {
@@ -128,6 +107,7 @@ export function Calibrate({ mode, width, height, mobile, name }) {
     updateCenterCoordinates()
     map.on('move', updateCenterCoordinates)
 
+    // zoom text
     const updateZoomLevel = () => {
       const zoomLevel = map.getZoom().toFixed(2)
       zText.textContent = `Zoom: ${zoomLevel}`
@@ -231,11 +211,5 @@ export function Link({ mode, width, height, mobile, name, params }) {
       .html('<p><svg xmlns="http://www.w3.org/2000/svg" stroke="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-bounce inline"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg> Unsaved Changes</p>')
   }, [map])
 
-
-
-
-  return (
-    <>
-    </>
-  )
+  return null
 }
