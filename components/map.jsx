@@ -18,7 +18,7 @@ import Toolbox from './toolbox'
 import Starfield from './starfield'
 import Sheet from './sheet'
 import { useDraw } from "./controls";
-// import { Calibrate, Link } from './foundry'
+import { Calibrate, Link } from './foundry'
 
 let popup, mode = new Set([])
 
@@ -243,6 +243,87 @@ export default function Map({ width, height, data, name, mobile, params, locked,
 
   useEffect(() => {
     if (!wrapper) return
+    // capture a webp screenshot
+    if (params.get("img")) {
+      wrapper.on('load', async ({ target: map }) => {
+        const userMadeLocations = data.features.filter(d => {
+          if (d.geometry.type !== "Point") return
+          return d.properties.userCreated && wrapper.getBounds().contains(new maplibregl.LngLat(d.geometry.coordinates[0], d.geometry.coordinates[1]))
+        })
+        console.log("User made locations currently on screen:", userMadeLocations)
+
+        window.parent.postMessage({
+          type: 'log',
+          message: userMadeLocations,
+        }, '*')
+
+        // all userMadeLocations should have an icon prop added which uses
+        userMadeLocations.forEach(location => {
+          if (!location.properties.icon) {
+            const type = location.properties.type;
+            location.properties.icon = `https://raw.githubusercontent.com/CodaBool/starlibre/refs/heads/main/public/svg/default/${type}.svg`;
+          }
+        })
+
+        const userMadeLocationsWithPixels = userMadeLocations.map(location => {
+          const point = map.project(new maplibregl.LngLat(location.geometry.coordinates[0], location.geometry.coordinates[1]))
+          return {
+            ...location,
+            pixelCoordinates: {
+              top: point.y,
+              left: point.x
+            }
+          };
+        })
+
+        const userLocationElements = document.querySelectorAll('.user.location');
+
+        window.parent.postMessage({
+          type: 'featureData',
+          featureData: userMadeLocationsWithPixels,
+        }, '*')
+
+        window.parent.postMessage({
+          type: 'log',
+          message: "waiting for icons",
+        }, '*')
+
+        const checkIconsLoaded = async () => {
+          const checkInterval = 100; // milliseconds
+          const maxAttempts = 100; // maximum number of attempts before giving up
+          let attempts = 0;
+
+          while (attempts < maxAttempts) {
+            const allIconsLoaded = Array.from(userLocationElements).every(element => {
+              const svgContent = element.innerHTML
+              if (!svgContent && svgContent.includes('<svg')) console.log("loading icon", element, attempts, "/", maxAttempts)
+              return svgContent && svgContent.includes('<svg');
+            });
+
+            if (allIconsLoaded) {
+              return true;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, checkInterval));
+            attempts++;
+          }
+
+          return false;
+        };
+
+        await checkIconsLoaded();
+
+        window.parent.postMessage({
+          type: 'log',
+          message: "icons loaded",
+        }, '*')
+
+        window.parent.postMessage({
+          type: 'webpImage',
+          webpImage: map.getCanvas().toDataURL(),
+        }, '*')
+      });
+    }
     listeners({ target: wrapper })
   }, [wrapper, recreateListeners, params.get("preview")])
 
@@ -257,8 +338,6 @@ export default function Map({ width, height, data, name, mobile, params, locked,
       className: "fade-in"
     })
   }, [])
-
-  if (locked || params.get("calibrate")) return null
 
   // add all custom icons
   if (wrapper) {
@@ -393,19 +472,20 @@ export default function Map({ width, height, data, name, mobile, params, locked,
         />
       </Source>
       {UNIT === "ly" && <Starfield width={width} height={height} />}
-      <div className="absolute mt-28 ml-11 mr-[.3em] cursor-pointer z-10 bg-[rgba(0,0,0,.3)] rounded-xl zoom-controls" >
+      {params.get("zoom") !== "0" && <div className="absolute mt-28 ml-11 mr-[.3em] cursor-pointer z-10 bg-[rgba(0,0,0,.3)] rounded-xl zoom-controls" >
         <ZoomIn size={34} onClick={() => wrapper.zoomIn()} className='m-2 hover:stroke-blue-200' />
         <ZoomOut size={34} onClick={() => wrapper.zoomOut()} className='m-2 mt-4 hover:stroke-blue-200' />
-      </div>
+      </div>}
       {params.get("search") !== "0" && <SearchBar map={wrapper} name={name} data={data} pan={pan} mobile={mobile} />}
 
       {/* FOUNDRY */}
-      {/* {params.get("link") && <Link mode={mode} svg={svg} width={width} height={height} projection={projection} mobile={mobile} name={name} params={params} />} */}
+      {params.get("link") && <Link mode={mode} width={width} height={height} mobile={mobile} name={name} params={params} />}
+      {params.get("calibrate") && <Calibrate mode={mode} width={width} height={height} mobile={mobile} name={name} />}
 
       <Sheet {...drawerContent} setDrawerOpen={setDrawerOpen} drawerOpen={drawerOpen} name={name} />
 
       <Toolbox mode={mode} width={width} height={height} mobile={mobile} name={name} map={wrapper} />
-      {params.get("hamburger") !== "0" && <Hamburger mode={mode} name={name} params={params} map={wrapper} stargazer={stargazer} />}
+      {params.get("hamburger") !== "0" && <Hamburger mode={mode} name={name} params={params} map={wrapper} stargazer={stargazer} mobile={mobile} />}
     </>
   )
 }

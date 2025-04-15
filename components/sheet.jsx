@@ -55,7 +55,7 @@ export default function SheetComponent({ setDrawerOpen, drawerOpen, locations, c
     <Sheet onOpenChange={setDrawerOpen} open={drawerOpen} modal={false} style={{ color: 'white' }}>
       <SheetContent side="bottom" style={{ maxHeight: '38vh', overflowY: 'auto' }} className="map-sheet" onPointerDownOutside={handle}>
         <SheetHeader >
-          <SheetTitle className="text-center">{coordinates ? `${UNIT === "ly" ? "Y" : "lat"}: ${Math.floor(coordinates[1])}, ${UNIT === "ly" ? "X" : "lat"}: ${Math.floor(coordinates[0])}` : 'unknown'}</SheetTitle>
+          <SheetTitle className="text-center">{coordinates ? `${UNIT === "ly" ? "Y" : "lat"}: ${Math.floor(coordinates[1])}, ${UNIT === "ly" ? "X" : "lng"}: ${Math.floor(coordinates[0])}` : 'unknown'}</SheetTitle>
           {locations?.length > 1 && <SheetDescription className="text-center" >Nearby Locations</SheetDescription>}
         </SheetHeader >
         <div className="flex flex-wrap justify-center">

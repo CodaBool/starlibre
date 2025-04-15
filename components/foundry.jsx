@@ -1,7 +1,5 @@
 
 import { useEffect } from "react"
-import * as d3 from 'd3'
-import { pointer, zoomTransform, geoDistance, select, selectAll } from 'd3'
 import { useMap } from 'react-map-gl/maplibre'
 // import { geoPath, geoMercator, geoTransform } from 'd3-geo'
 import distance from '@turf/distance'
@@ -10,89 +8,92 @@ import maplibregl from 'maplibre-gl'
 import { getConsts } from '@/lib/utils'
 import { toast } from "sonner"
 
-export function Calibrate({ mode, g, width, height, mobile, svgRef, name }) {
+let text, zText, crosshairX, crosshairY
+
+export function Calibrate({ mode, width, height, mobile, name }) {
   const { map } = useMap()
   const { UNIT } = getConsts(name)
+
+  // duplicate of toolbox
+  function handleMove() {
+    const { lng, lat } = map.getCenter()
+    crosshairX.style.visibility = 'visible'
+    crosshairY.style.visibility = 'visible'
+    if (UNIT === "ly") {
+      text.textContent = `Y: ${lat.toFixed(1)} | X: ${lng.toFixed(1)}`;
+    } else {
+      text.textContent = `Lat: ${lat.toFixed(3)}° | Lng: ${lng.toFixed(3)}°`;
+    }
+    text.style.visibility = 'visible'
+  }
 
   useEffect(() => {
     if (!map) return
 
-    const svg = d3
-      .select(map.getCanvasContainer())
-      .append("svg")
-      .attr("width", "100%")
-      .attr("height", "100%")
-      .style("position", "absolute")
-      .style("z-index", 6)
-      .attr('pointer-events', 'none')
+    const crosshairLength = height / 5
 
-    const text = svg.append('text')
-      .attr('x', width / 2)
-      .attr('y', () => mobile ? 100 : 120)
-      .attr('class', 'textbox')
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .attr('opacity', 0.7)
-      .style('font-size', () => mobile ? '1.2em' : '1.8em')
-      .style('pointer-events', 'none')
-      .style('visibility', 'hidden')
+    // Find the parent of the <div mapboxgl-children> element
+    const mapboxChildrenParent = document.querySelector('div[mapboxgl-children=""]')
 
-    const updateCenterCoordinates = () => {
-      const center = map.getCenter()
-      const lat = center.lat.toFixed(3)
-      const lng = center.lng.toFixed(3)
-      text.text(`Lat: ${lat}° | Lng: ${lng}°`).style('visibility', 'visible')
-    }
+    // horizontal line
+    crosshairX = document.createElement('div')
+    crosshairX.className = 'crosshair crosshair-x'
+    crosshairX.style.position = 'absolute'
+    crosshairX.style.top = '50%'
+    crosshairX.style.left = '50%'
+    crosshairX.style.height = '1px'
+    crosshairX.style.zIndex = 2;
+    crosshairX.style.border = '1px dashed rgba(255, 255, 255, 0.5)'
+    crosshairX.style.width = `${Math.min(Math.max(crosshairLength, 50), width - 50)}px`
+    crosshairX.style.transform = 'translateX(-50%)'
+    mapboxChildrenParent.appendChild(crosshairX)
 
-    map.on('move', updateCenterCoordinates)
+    // vertical line
+    crosshairY = document.createElement('div')
+    crosshairY.className = 'crosshair crosshair-y'
+    crosshairY.style.position = 'absolute'
+    crosshairY.style.top = '50%'
+    crosshairY.style.left = '50%'
+    crosshairY.style.width = '1px'
+    crosshairY.style.zIndex = 2;
+    crosshairY.style.border = '1px dashed rgba(255, 255, 255, 0.5)'
+    crosshairY.style.height = `${Math.min(Math.max(crosshairLength, 50), height - 50)}px`
+    crosshairY.style.transform = 'translateY(-50%)'
+    mapboxChildrenParent.appendChild(crosshairY)
 
+    text = document.createElement('div')
+    text.className = 'textbox'
+    text.style.position = 'absolute'
+    text.style.left = '50%';
+    text.style.zIndex = 2;
+    text.style.transform = 'translateX(-50%)';
+    text.style.top = mobile ? '70px' : '90px'
+    text.style.color = 'white'
+    text.style.opacity = 0.7
+    text.style.fontSize = mobile ? '1.5em' : '2.2em'
+    text.style.pointerEvents = 'none'
+    text.style.textAlign = 'center'
+    mapboxChildrenParent.appendChild(text)
 
-    const centerCrosshairX = svg
-      .append("line")
-      .attr('x1', width / 2 - 50)
-      .attr('x2', width / 2 + 50)
-      .attr('y1', height / 2)
-      .attr('y2', height / 2)
-      .attr('stroke', 'white')
-      .attr('stroke-width', 1)
-      .attr('stroke-dasharray', '4,2')
-      .attr('pointer-events', 'none')
+    zText = document.createElement('div')
+    zText.className = 'textbox'
+    zText.style.position = 'absolute'
+    zText.style.left = '50%';
+    zText.style.zIndex = 2;
+    zText.style.transform = 'translateX(-50%)';
+    zText.style.bottom = mobile ? '70px' : '90px'
+    zText.style.color = 'white'
+    zText.style.opacity = 0.7
+    zText.style.fontSize = mobile ? '1.5em' : '2.2em'
+    zText.style.pointerEvents = 'none'
+    zText.style.textAlign = 'center'
+    mapboxChildrenParent.appendChild(zText)
 
-    const centerCrosshairY = svg
-      .append("line")
-      .attr('x1', width / 2)
-      .attr('x2', width / 2)
-      .attr('y1', height / 2 - 50)
-      .attr('y2', height / 2 + 50)
-      .attr('stroke', 'white')
-      .attr('stroke-width', 1)
-      .attr('stroke-dasharray', '4,2')
-      .attr('pointer-events', 'none')
-
-    updateCenterCoordinates()
-
-
-    const zoomText = svg.append('text')
-      .attr('x', width / 2)
-      .attr('y', height - 30)
-      .attr('class', 'zoom-textbox')
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .attr('opacity', 0.7)
-      .style('font-size', () => mobile ? '1.2em' : '1.8em')
-      .style('pointer-events', 'none')
-      .style('visibility', 'visible')
-
-    const updateZoomLevel = () => {
-      const zoomLevel = map.getZoom().toFixed(2)
-      zoomText.text(`Zoom: ${zoomLevel}`)
-    }
-
-    map.on('zoom', updateZoomLevel)
-
-    updateZoomLevel()
-
-    const handleSubmit = () => {
+    const button = document.createElement('button')
+    button.textContent = 'Submit'
+    button.className = 'absolute top-6 left-1/2 transform -translate-x-1/2 w-30 bg-[#302831] text-white py-2 px-4 rounded cursor-pointer'
+    button.style.zIndex = 100
+    button.addEventListener('click', () => {
       const center = map.getCenter()
       const autoZoom = Number(map.getZoom().toFixed(2))
       const autoLat = Number(center.lat.toFixed(3))
@@ -110,27 +111,37 @@ export function Calibrate({ mode, g, width, height, mobile, svgRef, name }) {
         autoLat,
         autoLng,
       }, '*')
-    }
+    })
+    document.body.appendChild(button)
 
-    const button = d3.select(map.getCanvasContainer())
-      .append('button')
-      .text('Submit')
-      .attr('class', 'absolute top-6 left-1/2 transform -translate-x-1/2 w-30 bg-[#302831] text-white py-2 px-4 rounded cursor-pointer')
-      .style('z-index', 10)
-      .on('click', handleSubmit)
+    // translate this
+
+
+    const updateCenterCoordinates = () => {
+      const { lat, lng } = map.getCenter()
+      if (UNIT === "ly") {
+        text.textContent = `Y: ${lat.toFixed(1)} | X: ${lng.toFixed(1)}`;
+      } else {
+        text.textContent = `Lat: ${lat.toFixed(3)}° | Lng: ${lng.toFixed(3)}°`;
+      }
+    }
+    updateCenterCoordinates()
+    map.on('move', updateCenterCoordinates)
+
+    const updateZoomLevel = () => {
+      const zoomLevel = map.getZoom().toFixed(2)
+      zText.textContent = `Zoom: ${zoomLevel}`
+    }
+    updateZoomLevel()
+    map.on('zoom', updateZoomLevel)
   }, [map])
 
-  return (
-    <>
-    </>
-  )
+  return null
 }
 
-export function Link({ mode, g, width, height, mobile, svgRef, name, params }) {
+export function Link({ mode, width, height, mobile, name, params }) {
   const { map } = useMap()
   const { UNIT } = getConsts(name)
-
-
 
   useEffect(() => {
     if (!map) return

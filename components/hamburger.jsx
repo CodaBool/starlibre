@@ -21,7 +21,7 @@ import { Heart, Github, UserRound, Copyright, Sparkles, Telescope, SquareArrowOu
 import { useEffect, useState } from "react"
 import { getConsts } from "@/lib/utils"
 
-export default function Hamburger({ mode, name, params, map, stargazer }) {
+export default function Hamburger({ mode, name, params, map, stargazer, mobile }) {
   const [check, setCheck] = useState()
   const { UNIT } = getConsts(name)
 
@@ -127,19 +127,19 @@ export default function Hamburger({ mode, name, params, map, stargazer }) {
             <HeartHandshake className="ml-[.6em] inline" /> <span className="ml-[5px]">Contribute</span>
           </DropdownMenuItem>
         </Link>
-        <Link href={`/${name}/export`}>
+        {!mobile && <Link href={`/${name}/export`}>
           <DropdownMenuItem className="cursor-pointer">
             <ArrowRightFromLine className="ml-[.6em] inline" /> <span className="ml-[5px]">Export</span>
           </DropdownMenuItem>
-        </Link>
-        {!stargazer &&
+        </Link>}
+        {(!stargazer && !mobile) &&
           <Link href={`/${name}?id=${params.get("id")}&preview=1`}>
             <DropdownMenuItem className="cursor-pointer">
               <Eye className="ml-[.6em] inline" /> <span className="ml-[5px]">Preview</span>
             </DropdownMenuItem>
           </Link>
         }
-        {stargazer &&
+        {(stargazer && !mobile) &&
           <Link href={`/${name}?id=${params.get("id")}`}>
             <DropdownMenuItem className="cursor-pointer">
               <Pencil className="ml-[.6em] inline" /> <span className="ml-[5px]">Edit</span>

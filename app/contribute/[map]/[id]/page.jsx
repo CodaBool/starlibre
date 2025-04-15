@@ -119,9 +119,10 @@ export default async function Location({ params, searchParams }) {
     } else if (location.geometry === "LineString") {
       type = "guide"
     } else {
-      coordPretty = Math.floor(Number(panX)) + " " + Math.floor(panY)
+      coordPretty = Math.floor(Number(panY)) + " " + Math.floor(panX)
     }
   }
+  console.log("open", `/${map}?locked=1&lng=${panX}&lat=${panY}&name=${encodeURIComponent(location.name)}&type=${type}&search=0&hamburger=0`)
 
   return (
     <div className="mx-auto my-4 flex justify-center flex-col md:container select-text">
@@ -163,7 +164,7 @@ export default async function Location({ params, searchParams }) {
                 ? <div>
                   <CircleX className="mx-auto" /> Invalid Coordinates
                 </div>
-                : <iframe src={`/${map}?locked=1&x=${panX}&y=${panY}&name=${encodeURIComponent(location.name)}&type=${type}`} width="600" height="400" style={{ border: "none" }}></iframe>
+                : <iframe src={`/${map}?locked=1&lng=${panX}&lat=${panY}&z=6.5&name=${encodeURIComponent(location.name)}&type=${type}&search=0&hamburger=0&zoom=0`} width="600" height="400" style={{ border: "none" }}></iframe>
               }
             </AccordionContent>
           </AccordionItem>
