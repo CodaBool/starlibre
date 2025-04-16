@@ -119,44 +119,39 @@ export function Calibrate({ mode, width, height, mobile, name }) {
   return null
 }
 
-export function Link({ mode, width, height, mobile, name, params }) {
+export function Link({ mobile, name, params }) {
   const { map } = useMap()
-  const { UNIT } = getConsts(name)
 
   useEffect(() => {
     if (!map) return
 
-    const svg = d3
-      .select(map.getCanvasContainer())
-      .append("svg")
-      .attr("width", "100%")
-      .attr("height", "100%")
-      .style("position", "absolute")
-      .style("z-index", 6)
-      .attr('pointer-events', 'none')
+    const mapContainer = map.getCanvasContainer()
 
-    const text = svg.append('text')
-      .attr('x', width / 2)
-      .attr('y', 120)
-      .attr('class', 'textbox')
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .attr('opacity', 0.7)
-      .style('font-size', '1.8em')
-      .style('pointer-events', 'none')
-      .style('visibility', 'hidden')
+    const text = document.createElement('div')
+    text.className = 'textbox'
+    text.style.position = 'absolute'
+    text.style.left = '50%'
+    text.style.top = '120px'
+    text.style.transform = 'translateX(-50%)'
+    text.style.color = 'white'
+    text.style.opacity = 0.7
+    text.style.fontSize = '1.8em'
+    text.style.pointerEvents = 'none'
+    text.style.visibility = 'hidden'
+    mapContainer.appendChild(text)
 
-    const zoomText = svg.append('text')
-      .attr('x', width / 2)
-      .attr('y', height - 30)
-      .attr('class', 'zoom-textbox')
-      .attr('text-anchor', 'middle')
-      .attr('fill', 'white')
-      .attr('opacity', 0.7)
-      .style('font-size', () => mobile ? '1.2em' : '1.8em')
-      .style('pointer-events', 'none')
-      .style('visibility', 'visible')
-
+    const zoomText = document.createElement('div')
+    zoomText.className = 'zoom-textbox'
+    zoomText.style.position = 'absolute'
+    zoomText.style.left = '50%'
+    zoomText.style.bottom = '30px'
+    zoomText.style.transform = 'translateX(-50%)'
+    zoomText.style.color = 'white'
+    zoomText.style.opacity = 0.7
+    zoomText.style.fontSize = mobile ? '1.2em' : '1.8em'
+    zoomText.style.pointerEvents = 'none'
+    zoomText.style.visibility = 'visible'
+    mapContainer.appendChild(zoomText)
 
     const handleSubmit = () => {
       const maps = JSON.parse(localStorage.getItem('maps') || '{}')
@@ -196,19 +191,19 @@ export function Link({ mode, width, height, mobile, name, params }) {
         })
     }
 
-    const button = d3.select(map.getCanvasContainer())
-      .append('button')
-      .text('Submit')
-      .attr('class', 'absolute top-6 left-1/2 transform -translate-x-1/2 w-30 bg-[#302831] text-white py-2 px-4 rounded cursor-pointer')
-      .style('z-index', 10)
-      .on('click', handleSubmit)
+    const button = document.createElement('button')
+    button.textContent = 'Submit'
+    button.className = 'absolute top-6 left-1/2 transform -translate-x-1/2 w-30 bg-[#302831] text-white py-2 px-4 rounded cursor-pointer'
+    button.style.zIndex = 10
+    button.addEventListener('click', handleSubmit)
+    mapContainer.appendChild(button)
 
-    const unsavedChangesText = d3.select(map.getCanvasContainer())
-      .append('div')
-      .attr('class', 'absolute top-16 left-1/2 transform -translate-x-1/2 w-30 text-white py-2 px-4 w-[200px] flex justify-center unsaved-text')
-      .style('z-index', 10)
-      .style('visibility', "hidden")
-      .html('<p><svg xmlns="http://www.w3.org/2000/svg" stroke="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-bounce inline"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg> Unsaved Changes</p>')
+    const unsavedChangesText = document.createElement('div')
+    unsavedChangesText.className = 'absolute top-16 left-1/2 transform -translate-x-1/2 w-30 text-white py-2 px-4 w-[200px] flex justify-center unsaved-text'
+    unsavedChangesText.style.zIndex = 10
+    unsavedChangesText.style.visibility = "hidden"
+    unsavedChangesText.innerHTML = '<p><svg xmlns="http://www.w3.org/2000/svg" stroke="white" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-bounce inline"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg> Unsaved Changes</p>'
+    mapContainer.appendChild(unsavedChangesText)
   }, [map])
 
   return null

@@ -68,7 +68,9 @@ export default function Hamburger({ mode, name, params, map, stargazer, mobile }
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger onPointerDown={e => e.stopPropagation()} className="m-5 ml-12 absolute hamburger cursor-pointer z-10"><Menu width={40} height={40} className="cursor-pointer" /></DropdownMenuTrigger>
+      <DropdownMenuTrigger onPointerDown={e => e.stopPropagation()} className="m-5 ml-12 absolute hamburger cursor-pointer z-10">
+        <Menu width={40} height={40} className="cursor-pointer" />
+      </DropdownMenuTrigger>
       <DropdownMenuContent onPointerDown={e => e.stopPropagation()}>
         <DropdownMenuLabel>Tools</DropdownMenuLabel>
         <DropdownMenuItem className="cursor-pointer" onPointerUp={() => toggle("measure", check === "measure")}>
@@ -77,75 +79,80 @@ export default function Hamburger({ mode, name, params, map, stargazer, mobile }
         <DropdownMenuItem className="cursor-pointer" onPointerUp={() => toggle("crosshair", check === "crosshair")}>
           <Crosshair /> Coordinate <input type="checkbox" checked={check === "crosshair"} readOnly />
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Links</DropdownMenuLabel>
-        {/* <DropdownMenuItem className="cursor-pointer"><Copyright /> License</DropdownMenuItem> */}
-        {/* <DropdownMenuItem className="cursor-pointer"><Heart /> Credits</DropdownMenuItem> */}
-        <Dialog className="" >
-          <DialogTrigger asChild>
-            <Button variant="ghost" className="w-full pl-0 cursor-pointer">
-              <Heart size={16} className="relative top-[-1px] pe-[2px] inline left-[-6px]" /> <span className="left-[-2px] relative">Credits</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-[410px]" style={{ color: 'white' }} onInteractOutside={e => console.log("outside")}>
-            <DialogHeader>
-              <DialogTitle className="text-center"><><Heart size={18} className="pe-[2px] animate-bounce inline mr-2" /> Credits</></DialogTitle>
-              <DialogDescription className="py-6">
-                <Credits name={name} />
-              </DialogDescription>
-            </DialogHeader>
-          </DialogContent>
-        </Dialog>
-        <a href="https://github.com/codabool/stargazer.vercel.app" target="_blank">
-          <DropdownMenuItem className="cursor-pointer">
-            <Github className="ml-[.6em]" /> <span className="ml-[5px]">GitHub</span>
-          </DropdownMenuItem>
-        </a>
-        {name === "lancer" &&
-          <a href="/lancer_starwall">
-            <DropdownMenuItem className="cursor-pointer">
-              <User className="ml-[.6em]" /> <span className="ml-[5px]">Variant</span>
-            </DropdownMenuItem>
-          </a>
-        }
-        {name === "lancer_starwall" &&
-          <a href="/lancer">
-            <DropdownMenuItem className="cursor-pointer">
-              <User className="ml-[.6em]" /> <span className="ml-[5px]">Core</span>
-            </DropdownMenuItem>
-          </a>
-        }
-        <Link href="/" >
-          <DropdownMenuItem className="cursor-pointer">
-            <Map className="ml-[.6em]" /> <span className="ml-[5px]">Other Maps</span>
-          </DropdownMenuItem>
-        </Link>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Create</DropdownMenuLabel>
-        <Link href={`/contribute/${name}`}>
-          <DropdownMenuItem className="cursor-pointer">
-            <HeartHandshake className="ml-[.6em] inline" /> <span className="ml-[5px]">Contribute</span>
-          </DropdownMenuItem>
-        </Link>
-        {(!mobile && !params.get("simple")) && <Link href={`/${name}/export`}>
-          <DropdownMenuItem className="cursor-pointer">
-            <ArrowRightFromLine className="ml-[.6em] inline" /> <span className="ml-[5px]">Export</span>
-          </DropdownMenuItem>
-        </Link>}
-        {(!stargazer && !mobile && !params.get("simple")) &&
-          <Link href={`/${name}?id=${params.get("id")}&preview=1`}>
-            <DropdownMenuItem className="cursor-pointer">
-              <Eye className="ml-[.6em] inline" /> <span className="ml-[5px]">Preview</span>
-            </DropdownMenuItem>
-          </Link>
-        }
-        {(stargazer && !mobile && !params.get("simple")) &&
-          <Link href={`/${name}?id=${params.get("id")}`}>
-            <DropdownMenuItem className="cursor-pointer">
-              <Pencil className="ml-[.6em] inline" /> <span className="ml-[5px]">Edit</span>
-            </DropdownMenuItem>
-          </Link>
-        }
+        {params.get("iframe") !== "1" && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Links</DropdownMenuLabel>
+            {/* <DropdownMenuItem className="cursor-pointer"><Copyright /> License</DropdownMenuItem> */}
+            {/* <DropdownMenuItem className="cursor-pointer"><Heart /> Credits</DropdownMenuItem> */}
+            <Dialog className="" >
+              <DialogTrigger asChild>
+                <Button variant="ghost" className="w-full pl-0 cursor-pointer">
+                  <Heart size={16} className="relative top-[-1px] pe-[2px] inline left-[-6px]" />
+                  <span className="left-[-2px] relative">Credits</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[410px]" style={{ color: 'white' }} onInteractOutside={e => console.log("outside")}>
+                <DialogHeader>
+                  <DialogTitle className="text-center"><><Heart size={18} className="pe-[2px] animate-bounce inline mr-2" /> Credits</></DialogTitle>
+                  <DialogDescription className="py-6">
+                    <Credits name={name} />
+                  </DialogDescription>
+                </DialogHeader>
+              </DialogContent>
+            </Dialog>
+            <a href="https://github.com/codabool/stargazer.vercel.app" target="_blank">
+              <DropdownMenuItem className="cursor-pointer">
+                <Github className="ml-[.6em]" /> <span className="ml-[5px]">GitHub</span>
+              </DropdownMenuItem>
+            </a>
+            {name === "lancer" &&
+              <a href="/lancer_starwall">
+                <DropdownMenuItem className="cursor-pointer">
+                  <User className="ml-[.6em]" /> <span className="ml-[5px]">Variant</span>
+                </DropdownMenuItem>
+              </a>
+            }
+            {name === "lancer_starwall" &&
+              <a href="/lancer">
+                <DropdownMenuItem className="cursor-pointer">
+                  <User className="ml-[.6em]" /> <span className="ml-[5px]">Core</span>
+                </DropdownMenuItem>
+              </a>
+            }
+            <Link href="/" >
+              <DropdownMenuItem className="cursor-pointer">
+                <Map className="ml-[.6em]" /> <span className="ml-[5px]">Other Maps</span>
+              </DropdownMenuItem>
+            </Link>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Create</DropdownMenuLabel>
+            <Link href={`/contribute/${name}`}>
+              <DropdownMenuItem className="cursor-pointer">
+                <HeartHandshake className="ml-[.6em] inline" /> <span className="ml-[5px]">Contribute</span>
+              </DropdownMenuItem>
+            </Link>
+            {!mobile && <Link href={`/${name}/export`}>
+              <DropdownMenuItem className="cursor-pointer">
+                <ArrowRightFromLine className="ml-[.6em] inline" /> <span className="ml-[5px]">Export</span>
+              </DropdownMenuItem>
+            </Link>}
+            {(!stargazer && !mobile) &&
+              <Link href={`/${name}?id=${params.get("id")}&preview=1`}>
+                <DropdownMenuItem className="cursor-pointer">
+                  <Eye className="ml-[.6em] inline" /> <span className="ml-[5px]">Preview</span>
+                </DropdownMenuItem>
+              </Link>
+            }
+            {(stargazer && !mobile) &&
+              <Link href={`/${name}?id=${params.get("id")}`}>
+                <DropdownMenuItem className="cursor-pointer">
+                  <Pencil className="ml-[.6em] inline" /> <span className="ml-[5px]">Edit</span>
+                </DropdownMenuItem>
+              </Link>
+            }
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu >
   )

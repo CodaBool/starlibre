@@ -17,9 +17,8 @@ export const useStore = create((set) => ({
 export default function Cartographer({ name, data, stargazer, fid }) {
   const { SCALE, CENTER, STYLE, VIEW, MAX_ZOOM, MIN_ZOOM, BOUNDS, BG } = getConsts(name)
   const [size, setSize] = useState()
-  const mobile = isMobile()
-  const [draw, setDraw] = useState()
   const params = useSearchParams()
+  const mobile = isMobile()
   const router = useRouter()
   VIEW.zoom = params.get("z") || VIEW.zoom
   VIEW.longitude = params.get("lng") || VIEW.longitude
@@ -34,10 +33,10 @@ export default function Cartographer({ name, data, stargazer, fid }) {
       setSize({ width: Number(params.get("width")), height: Number(params.get("height")) })
     } else {
       setSize({ width: window.innerWidth, height: window.innerHeight })
-      const handleResize = () => setSize({ width: window.innerWidth, height: window.innerHeight })
-      window.addEventListener('resize', handleResize)
-      return () => window.removeEventListener('resize', handleResize)
     }
+    const handleResize = () => setSize({ width: window.innerWidth, height: window.innerHeight })
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   if (params.get("id")) {
@@ -51,9 +50,11 @@ export default function Cartographer({ name, data, stargazer, fid }) {
     const maps = JSON.parse(localStorage.getItem('maps')) || {}
     if (params.get("id") === "foundry") {
       const uuid = params.get("uuid")
+      // console.log("get map geojson using secret", params.get("secret"), uuid)
       fetch(`/api/v1/map/${uuid}`)
         .then(res => res.json())
         .then(res => {
+          // console.log("res", res)
           if (res.error) {
             window.parent.postMessage({
               type: 'error',
@@ -77,8 +78,10 @@ export default function Cartographer({ name, data, stargazer, fid }) {
                 map: name,
               }
             }))
+            //
             // console.log("redirect to", `/${name}?id=${uuid}&hamburger=0&search=0&link=foundry&secret=${params.get("secret")}`)
-            router.replace(`/${name}?id=${uuid}&hamburger=0&search=0&link=foundry&secret=${params.get("secret")}`)
+            // router.replace(`/${name}?id=${uuid}&hamburger=0&search=0&link=foundry&secret=${params.get("secret")}`)
+            router.replace(`/${name}?secret=${params.get("secret")}&id=${uuid}&hamburger=0&search=0&zoom=0`)
           }
         })
         .catch(message => {
@@ -99,7 +102,7 @@ export default function Cartographer({ name, data, stargazer, fid }) {
     }
   }
 
-  if (!size) {
+  if (!size || params.get("waitForFetch")) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin inline-block w-8 h-8 border-4 border-current border-t-transparent text-indigo-900 rounded-full" />

@@ -171,6 +171,7 @@ export default function Map({ width, height, data, name, mobile, params, locked,
           if (!e.lngLat) return
           coordinates = [e.lngLat.lng, e.lngLat.lat]
         }
+        console.log("DEBUG:", coordinates)
         if (!coordinates) {
           console.error("failed to get coordinates", coordinates, e)
         }
@@ -458,7 +459,7 @@ export default function Map({ width, height, data, name, mobile, params, locked,
       {params.get("search") !== "0" && <SearchBar map={wrapper} name={name} data={data} pan={pan} mobile={mobile} />}
 
       {/* FOUNDRY */}
-      {params.get("link") && <Link mode={mode} width={width} height={height} mobile={mobile} name={name} params={params} />}
+      {params.get("secret") && <Link mode={mode} width={width} height={height} mobile={mobile} name={name} params={params} />}
       {params.get("calibrate") && <Calibrate mode={mode} width={width} height={height} mobile={mobile} name={name} />}
 
       <Sheet {...drawerContent} setDrawerOpen={setDrawerOpen} drawerOpen={drawerOpen} name={name} />
