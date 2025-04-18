@@ -167,14 +167,11 @@ body {
   .searchbox .overflow-y-auto {
     border: 1px solid red;
   }
-
   .hamburger {
-    margin: none;
     right: 1em;
     bottom: 0.5em;
   }
   .zoom-controls {
-    margin: none;
     right: 1.8em;
     bottom: 7em;
   }

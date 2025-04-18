@@ -164,7 +164,7 @@ export default async function Location({ params, searchParams }) {
                 ? <div>
                   <CircleX className="mx-auto" /> Invalid Coordinates
                 </div>
-                : <iframe src={`/${map}?locked=1&lng=${panX}&lat=${panY}&z=6.5&name=${encodeURIComponent(location.name)}&type=${type}&search=0&hamburger=0&zoom=0`} width="600" height="400" style={{ border: "none" }}></iframe>
+                : <iframe src={`/${map}?locked=1&lng=${panX}&lat=${panY}&z=4&name=${encodeURIComponent(location.name)}&type=${type}&search=0&hamburger=0&zoom=0`} width="600" height="400" style={{ border: "none" }}></iframe>
               }
             </AccordionContent>
           </AccordionItem>

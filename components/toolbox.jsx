@@ -16,7 +16,7 @@ let text, crosshairX, crosshairY
 
 // TODO: consider useMap
 export default function Toolbox({ mode, map, width, height, mobile, name }) {
-  const { UNIT } = getConsts(name)
+  const { UNIT, DISTANCE_CONVERTER } = getConsts(name)
 
   function handleClick(e) {
     if (!mode.has("measure")) return
@@ -59,29 +59,20 @@ export default function Toolbox({ mode, map, width, height, mobile, name }) {
         }
       )
 
-      geojson.features.push(linestring);
+      geojson.features.push(linestring)
+      const km = turf.length(linestring)
+      const distance = km * DISTANCE_CONVERTER
       if (name === "fallout") {
-        const miles = turf.length(linestring, { units: 'miles' })
-        console.log("miles", miles)
-
-        const walkingSpeedMph = 3; // average walking speed in miles per hour
-        const walkingTimeHours = miles / walkingSpeedMph;
-        text.textContent = `${miles.toFixed(1)} miles | ${walkingTimeHours.toFixed(1)} hours on foot (3mph)`;
+        const walkingSpeedMph = 3 // average walking speed in miles per hour
+        const walkingTimeHours = distance / walkingSpeedMph;
+        text.textContent = `${distance.toFixed(1)} miles | ${walkingTimeHours.toFixed(1)} hours on foot (3mph)`;
       } else if (name.includes("lancer")) {
-        const km = turf.length(linestring)
-        console.log("km", km)
-        // Janederscore's map is 135ly across. Convert km so they match up
-        const lightYears = km * 0.013043478;
-        const relativeTime = (lightYears / Math.sinh(Math.atanh(0.995))).toFixed(1);
-        text.textContent = `${lightYears.toFixed(1)}ly | ${relativeTime} rel. years (.995u) | ${(lightYears / 0.995).toFixed(1)} observer years`;
+        const relativeTime = (distance / Math.sinh(Math.atanh(0.995))).toFixed(1);
+        text.textContent = `${distance.toFixed(1)}ly | ${relativeTime} rel. years (.995u) | ${(distance / 0.995).toFixed(1)} observer years`;
       } else if (name === "starwars") {
-        const km = turf.length(linestring)
-        console.log("km", km)
-
         // TODO: find a conversion and research how hyperspace works
-        const lightYears = km * 0.013043478;
-        const relativeTime = (lightYears / Math.sinh(Math.atanh(0.995))).toFixed(1);
-        text.textContent = `${lightYears.toFixed(1)}ly | ${relativeTime} rel. years (.995u) | ${(lightYears / 0.995).toFixed(1)} observer years`;
+        const relativeTime = (distance / Math.sinh(Math.atanh(0.995))).toFixed(1);
+        text.textContent = `${distance.toFixed(1)}ly | ${relativeTime} rel. years (.995u) | ${(distance / 0.995).toFixed(1)} observer years`;
       }
       text.style.visibility = 'visible';
     }

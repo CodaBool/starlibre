@@ -1,26 +1,32 @@
 import { Source, Layer } from 'react-map-gl/maplibre'
 import { useMemo } from 'react'
 
+function randomMercatorLatitude() {
+  const y = Math.random() * 2 - 1; // uniform in [-1, 1]
+  const latRad = Math.atan(Math.sinh(Math.PI * y));
+  return latRad * (180 / Math.PI);
+}
+
+
 export default function Starfield({ width, height }) {
   const starGeoJSON = useMemo(() => {
-    const numStars = Math.floor((width * height) / 8000)
+    const numStars = Math.floor((width * height) / 2000)
     const features = []
     for (let i = 0; i < numStars; i++) {
+      const lon = Math.random() * 360 - 180;
+      const lat = randomMercatorLatitude();
+
       features.push({
         type: "Feature",
         geometry: {
           type: "Point",
-          coordinates: [
-            // assume map is global, space-style – random across lon/lat
-            Math.random() * 360 - 180,
-            Math.random() * 180 - 90,
-          ]
+          coordinates: [lon, lat],
         },
         properties: {
           size: Math.random() * 2 + 1,
-          opacity: Math.random() * 0.3 + 0.1,
+          opacity: Math.random() * 0.2,
         }
-      })
+      });
     }
     return {
       type: "FeatureCollection",

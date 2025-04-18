@@ -68,7 +68,7 @@ export default function Hamburger({ mode, name, params, map, stargazer, mobile }
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger onPointerDown={e => e.stopPropagation()} className="m-5 ml-12 absolute hamburger cursor-pointer z-10">
+      <DropdownMenuTrigger onPointerDown={e => e.stopPropagation()} className="m-5 ml-12 absolute hamburger cursor-pointer z-10" style={{ transition: 'bottom 0.5s ease-in-out' }}>
         <Menu width={40} height={40} className="cursor-pointer" />
       </DropdownMenuTrigger>
       <DropdownMenuContent onPointerDown={e => e.stopPropagation()}>

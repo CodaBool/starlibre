@@ -16,7 +16,7 @@ import * as SVG from './svg.js'
 import { useMap } from 'react-map-gl/maplibre'
 import { useEffect } from "react"
 
-export default function SheetComponent({ setDrawerOpen, drawerOpen, locations, coordinates, name, selected }) {
+export default function SheetComponent({ setDrawerOpen, drawerOpen, locations, coordinates, name, selected, width }) {
   const { map } = useMap()
   const { UNIT } = getConsts(name)
 
@@ -47,6 +47,24 @@ export default function SheetComponent({ setDrawerOpen, drawerOpen, locations, c
         el.style.bottom = "40%"
       } else {
         el.style.bottom = "20px"
+      }
+    }
+
+    // move the hamburger + zoom controls if on a small screen
+    const hamburger = document.querySelector(".hamburger")
+    const zoomControls = document.querySelector(".zoom-controls")
+    if (hamburger && zoomControls && window.innerWidth < 1200) {
+      if (drawerOpen) {
+        hamburger.style.bottom = "40%"
+        zoomControls.style.bottom = "55%"
+      } else if (!drawerOpen) {
+        hamburger.style.bottom = "0.5em"
+        zoomControls.style.bottom = "7em"
+      }
+    } else if (hamburger && zoomControls && window.innerWidth > 1200) {
+      if (hamburger.style.bottom === "0.5em") {
+        hamburger.style.removeProperty("bottom")
+        zoomControls.style.removeProperty("bottom")
       }
     }
   }, [drawerOpen])

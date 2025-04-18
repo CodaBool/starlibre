@@ -21,7 +21,7 @@ import { useDraw } from "./controls";
 import { Calibrate, Link } from './foundry'
 
 let popup, mode = new Set([])
-
+let isRightDragging = false;
 export async function getIcon(d, fillRGBA) {
   const icon = d.properties.icon || SVG[d.properties.type]
   const fill = fillRGBA || d.properties.fill
@@ -65,7 +65,7 @@ export default function Map({ width, height, data, name, mobile, params, locked,
   const [drawerOpen, setDrawerOpen] = useState()
   const [drawerContent, setDrawerContent] = useState()
   const recreateListeners = useDraw(s => s.recreateListeners)
-  const { CENTER, SCALE, CLICK_ZOOM, NO_PAN, LAYER_PRIO, LAYOUT_OVERIDE, IGNORE_POLY, UNIT } = getConsts(name)
+  const { CENTER, SCALE, CLICK_ZOOM, NO_PAN, LAYER_PRIO, LAYOUT_OVERIDE, IGNORE_POLY, UNIT, DISTANCE_CONVERTER } = getConsts(name)
 
   async function pan(d, locations, fit) {
     if (locked && !fit) return
@@ -171,7 +171,7 @@ export default function Map({ width, height, data, name, mobile, params, locked,
           if (!e.lngLat) return
           coordinates = [e.lngLat.lng, e.lngLat.lat]
         }
-        console.log("DEBUG:", coordinates)
+        // console.log("DEBUG:", coordinates)
         if (!coordinates) {
           console.error("failed to get coordinates", coordinates, e)
         }
@@ -225,6 +225,25 @@ export default function Map({ width, height, data, name, mobile, params, locked,
       }
     }
 
+    // RMB panning
+    let offset, isMoving = false;
+    map.on("mousedown", (e) => {
+      if (e.originalEvent.button === 2) {
+        isMoving = true;
+        offset = e.point;
+      }
+    });
+    map.on("mousemove", (e) => {
+      if (isMoving) {
+        map.panBy([offset.x - e.point.x, offset.y - e.point.y], {
+          duration: 0,
+        });
+        offset = e.point;
+      }
+    })
+    map.on("mouseup", () => isMoving = false)
+
+
     map.off("move", ensureCheckbox)
     map.off('mousemove', 'location', mouseMove)
     map.off('mouseleave', 'location', mouseLeave)
@@ -266,6 +285,13 @@ export default function Map({ width, height, data, name, mobile, params, locked,
           //   message: userCreated,
           // }, '*')
 
+          const topBound = map.getBounds().getNorth();
+          const bottomBound = map.getBounds().getSouth();
+          const km = turf.distance(
+            turf.point([0, topBound]),
+            turf.point([0, bottomBound])
+          )
+
           // all userMadeLocations should have an icon prop added which uses
           userCreated.forEach(location => {
             if (!location.properties.icon) {
@@ -294,6 +320,8 @@ export default function Map({ width, height, data, name, mobile, params, locked,
           window.parent.postMessage({
             type: 'webpImage',
             webpImage: map.getCanvas().toDataURL(),
+            distance: km * DISTANCE_CONVERTER,
+            unit: UNIT,
           }, '*')
         })
       });
@@ -452,7 +480,7 @@ export default function Map({ width, height, data, name, mobile, params, locked,
         />
       </Source>
       {UNIT === "ly" && <Starfield width={width} height={height} />}
-      {params.get("zoom") !== "0" && <div className="absolute mt-28 ml-11 mr-[.3em] cursor-pointer z-10 bg-[rgba(0,0,0,.3)] rounded-xl zoom-controls" >
+      {params.get("zoom") !== "0" && <div className="absolute mt-28 ml-11 mr-[.3em] cursor-pointer z-10 bg-[rgba(0,0,0,.3)] rounded-xl zoom-controls" style={{ transition: 'bottom 0.5s ease-in-out' }}>
         <ZoomIn size={34} onClick={() => wrapper.zoomIn()} className='m-2 hover:stroke-blue-200' />
         <ZoomOut size={34} onClick={() => wrapper.zoomOut()} className='m-2 mt-4 hover:stroke-blue-200' />
       </div>}
@@ -462,7 +490,7 @@ export default function Map({ width, height, data, name, mobile, params, locked,
       {params.get("secret") && <Link mode={mode} width={width} height={height} mobile={mobile} name={name} params={params} />}
       {params.get("calibrate") && <Calibrate mode={mode} width={width} height={height} mobile={mobile} name={name} />}
 
-      <Sheet {...drawerContent} setDrawerOpen={setDrawerOpen} drawerOpen={drawerOpen} name={name} />
+      <Sheet {...drawerContent} setDrawerOpen={setDrawerOpen} drawerOpen={drawerOpen} name={name} width={width} />
 
       <Toolbox mode={mode} width={width} height={height} mobile={mobile} name={name} map={wrapper} />
       {params.get("hamburger") !== "0" && <Hamburger mode={mode} name={name} params={params} map={wrapper} stargazer={stargazer} mobile={mobile} />}

@@ -236,68 +236,70 @@ export default function EditorForm({ feature, draw, setPopup, mapName, popup, pa
           )}
 
           {!editorTable && (
-            Object.entries(feature.properties).map((arr, i) => (
-              <TableRow key={i} >
-                <TableCell className="font-medium">{arr[0]}</TableCell>
-                {arr[1].startsWith("http") &&
-                  <TableCell>
-                    <svg width="20" height="20">
-                      <image href={arr[1]} width="20" height="20" />
-                    </svg>
-                  </TableCell>
-                }
-                {arr[1].startsWith("rgba") &&
-                  <TableCell>
-                    {arr[0] === "stroke"
-                      ?
-                      <div
-                        className="swatch w-5 h-5 border border-white"
-                        style={{ backgroundColor: popup.properties.stroke }}
-                      />
-                      :
-                      <div
-                        className="swatch w-5 h-5 border border-white"
-                        style={{ backgroundColor: popup.properties.fill }}
-                      />
-                    }
-                  </TableCell>
-                }
-                {(!arr[1].startsWith("rgba") && !arr[1].startsWith("http")) && <TableCell>{arr[1]}</TableCell>}
+            Object.entries(feature.properties).map((arr, i) => {
+              return (
+                <TableRow key={i} >
+                  <TableCell className="font-medium">{arr[0]}</TableCell>
+                  {arr[1].startsWith("http") &&
+                    <TableCell>
+                      <svg width="20" height="20">
+                        <image href={arr[1]} width="20" height="20" />
+                      </svg>
+                    </TableCell>
+                  }
+                  {arr[1].startsWith("rgba") &&
+                    <TableCell>
+                      {arr[0] === "stroke"
+                        ?
+                        <div
+                          className="swatch w-5 h-5 border border-white"
+                          style={{ backgroundColor: popup.properties.stroke }}
+                        />
+                        :
+                        <div
+                          className="swatch w-5 h-5 border border-white"
+                          style={{ backgroundColor: popup.properties.fill }}
+                        />
+                      }
+                    </TableCell>
+                  }
+                  {(!arr[1].startsWith("rgba") && !arr[1].startsWith("http")) && <TableCell>{arr[1]}</TableCell>}
 
-                <TableCell>
-                  <Dialog className="">
-                    <DialogTrigger>
-                      {arr[0] !== "type" && arr[0] !== "name" && (
-                        <Trash2 className="cursor-pointer stroke-gray-400" size={14} />
-                      )}
-                    </DialogTrigger>
-                    <DialogContent className="max-h-[600px]">
-                      <DialogHeader>
-                        <DialogTitle>Confirm <b>delete</b> row <b>{arr[0]}</b>?</DialogTitle>
-                        <table className="w-full text-left my-4 select-text">
-                          <tbody>
-                            <tr>
-                              <td className="border p-2">{arr[0]}</td>
-                              <td className="border p-2 max-w-[400px] overflow-auto">{arr[1]}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                        <div className="flex justify-between">
-                          <Button variant="destructive" onClick={() => deleteRow(i)} className="cursor-pointer rounded">
-                            Delete
-                          </Button>
-                          <DialogClose asChild>
-                            <Button variant="secondary" className="cursor-pointer rounded">
-                              Cancel
+                  <TableCell>
+                    <Dialog className="">
+                      <DialogTrigger>
+                        {arr[0] !== "type" && arr[0] !== "name" && (
+                          <Trash2 className="cursor-pointer stroke-gray-400" size={14} />
+                        )}
+                      </DialogTrigger>
+                      <DialogContent className="max-h-[600px]">
+                        <DialogHeader>
+                          <DialogTitle>Confirm <b>delete</b> row <b>{arr[0]}</b>?</DialogTitle>
+                          <table className="w-full text-left my-4 select-text">
+                            <tbody>
+                              <tr>
+                                <td className="border p-2">{arr[0]}</td>
+                                <td className="border p-2 max-w-[400px] overflow-auto">{arr[1]}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                          <div className="flex justify-between">
+                            <Button variant="destructive" onClick={() => deleteRow(i)} className="cursor-pointer rounded">
+                              Delete
                             </Button>
-                          </DialogClose>
-                        </div>
-                      </DialogHeader>
-                    </DialogContent>
-                  </Dialog>
-                </TableCell>
-              </TableRow>
-            ))
+                            <DialogClose asChild>
+                              <Button variant="secondary" className="cursor-pointer rounded">
+                                Cancel
+                              </Button>
+                            </DialogClose>
+                          </div>
+                        </DialogHeader>
+                      </DialogContent>
+                    </Dialog>
+                  </TableCell>
+                </TableRow>
+              )
+            })
           )}
 
           {isAddingRow && (
@@ -397,7 +399,7 @@ export default function EditorForm({ feature, draw, setPopup, mapName, popup, pa
       }
 
       <IconSelector mapName={mapName.includes("lancer") ? "lancer" : mapName} onSelect={selectIcon} show={(!isAddingRow && !editorTable && !feature.properties.icon)} />
-      {params.get("link") && <Link editProp={editProp} handleSave={handleSave} />}
+      {params.get("secret") && <Link editProp={editProp} handleSave={handleSave} />}
     </div >
   )
 }
@@ -410,18 +412,17 @@ export const Link = ({ editProp, handleSave }) => {
     window.parent.postMessage({ type: 'listen', doc }, '*')
   }
 
-  const saveUUID = () => {
-    editProp(documentId, "link")
+  const saveUUID = value => {
+    editProp(value || documentId || "", "link")
     handleSave()
     setOpen(false)
   }
 
   useEffect(() => {
     const listener = e => {
-      if (e.data.type === 'log') {
-        console.log("message from daddy", e.data.message)
-      } else if (e.data.type === 'uuid') {
+      if (e.data.type === 'uuid') {
         setDocumentId(e.data.uuid)
+        saveUUID(e.data.uuid)
       }
     }
     window.addEventListener('message', listener)

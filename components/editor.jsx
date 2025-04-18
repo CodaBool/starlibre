@@ -5,7 +5,6 @@ import EditorForm from "./forms/editor";
 import randomName from "@scaleway/random-name";
 import { X } from "lucide-react";
 import { getConsts } from "@/lib/utils";
-import { getIcon } from "./map";
 import { useStore } from "./cartographer";
 import { useDraw } from "./controls";
 
